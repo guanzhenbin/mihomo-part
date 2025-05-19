@@ -195,6 +195,7 @@ jobs:
         run: |
           pnpm install
           pnpm add @mihomo-party/sysproxy-darwin-${{ matrix.arch }}
+          pnpm add -D lightningcss
           pnpm prepare --${{ matrix.arch }}
       - name: Build
         env:
@@ -269,6 +270,7 @@ jobs:
           pnpm install
           pnpm add @mihomo-party/sysproxy-darwin-${{ matrix.arch }}
           pnpm add -D electron@32.2.2
+          pnpm add -D lightningcss
           pnpm prepare --${{ matrix.arch }}
       - name: Build
         env:
