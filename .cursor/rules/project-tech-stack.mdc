@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# 项目技术栈与约定
+
+## UI 库
+
+项目的前端 UI 使用 [shadcn/ui](mdc:https:/ui.shadcn.com)。
+
+在生成或修改 UI 组件时，请遵循 shadcn/ui 的设计规范和组件结构。

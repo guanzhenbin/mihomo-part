@@ -1,0 +1,12 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# BaseErrorBoundary 组件说明
+
+[base-error-boundary.tsx](mdc:src/renderer/src/components/base/base-error-boundary.tsx) 提供了全局错误边界功能，捕获其子组件树中的运行时错误。
+
+- 使用 `react-error-boundary` 的 `ErrorBoundary` 组件实现。
+- 自定义了 `ErrorFallback` 组件，展示错误信息、堆栈、并提供一键复制和反馈按钮。
+- 适合包裹在应用的高层节点，提升用户体验和错误可追踪性。

@@ -1,0 +1,29 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# src 目录结构与说明
+
+[src](mdc:src) 目录是项目的主代码目录，包含以下内容：
+
+- [shared/](mdc:src/shared): 存放可被主进程和渲染进程共享的代码或资源，如类型定义（types.d.ts）和国际化（i18n.ts）。
+- [main/](mdc:src/main): Electron 主进程相关代码，包含核心逻辑（core/）、配置（config/）、系统相关（sys/）、工具函数（utils/）及入口文件（index.ts）。
+- [preload/](mdc:src/preload): Electron 预加载脚本，通常用于主进程与渲染进程的安全通信，包含 index.ts 和类型声明 index.d.ts。
+- [renderer/](mdc:src/renderer): 渲染进程相关代码，包含：
+  - [index.html](mdc:src/renderer/index.html)、[floating.html](mdc:src/renderer/floating.html)：主页面和浮动窗口页面。
+  - [src/](mdc:src/renderer/src)：前端主代码，结构如下：
+    - [assets/](mdc:src/renderer/src/assets): 静态资源，如字体（NotoColorEmoji.ttf）和样式（main.css、floating.css）。
+    - [components/](mdc:src/renderer/src/components): 组件库，按功能模块细分（如 base、sider、sysproxy 等）。
+    - [hooks/](mdc:src/renderer/src/hooks): 自定义 React hooks。
+    - [locales/](mdc:src/renderer/src/locales): 多语言 JSON 文件（如 zh-CN.json、en-US.json 等）。
+    - [pages/](mdc:src/renderer/src/pages): 页面组件（如 mihomo.tsx、proxies.tsx 等）。
+    - [routes/](mdc:src/renderer/src/routes): 路由配置（index.tsx）。
+    - [utils/](mdc:src/renderer/src/utils): 工具函数和类型声明。
+    - [i18n.ts](mdc:src/renderer/src/i18n.ts): 国际化初始化。
+    - [main.tsx](mdc:src/renderer/src/main.tsx): 前端入口文件。
+    - [App.tsx](mdc:src/renderer/src/App.tsx): 应用主组件。
+    - [FloatingApp.tsx](mdc:src/renderer/src/FloatingApp.tsx): 浮动窗口主组件。
+    - [floating.tsx](mdc:src/renderer/src/floating.tsx): 浮动窗口逻辑。
+
+本规则帮助你快速定位 src 目录下的所有主要文件和子目录。
