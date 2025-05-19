@@ -2,6 +2,7 @@ appId: party.mihomo.app
 productName: Mihomo Party
 directories:
   buildResources: build
+compression: store
 files:
   - '!**/.vscode/*'
   - '!src/*'
@@ -44,8 +45,11 @@ mac:
     - NSMicrophoneUsageDescription: Application requests access to the device's microphone.
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
-  notarize: true
+  notarize: false
   artifactName: ${name}-macos-${version}-${arch}.${ext}
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  identity: null
 pkg:
   allowAnywhere: false
   allowCurrentUserHome: false
@@ -66,5 +70,10 @@ deb:
   afterInstall: 'build/linux/postinst'
 rpm:
   afterInstall: 'build/linux/postinst'
-npmRebuild: true
+npmRebuild: false
 publish: []
+buildDependenciesFromSource: false
+electronDist: node_modules/electron/dist
+asar: true
+afterSign: null
+forceCodeSigning: false

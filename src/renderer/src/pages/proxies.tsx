@@ -1,4 +1,4 @@
-import { Avatar, Button, Card, CardBody, Chip } from '@heroui/react'
+import { Avatar, Button, Card, CardBody, Chip, Select, SelectItem, Tooltip, Progress } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import {
@@ -9,7 +9,7 @@ import {
 } from '@renderer/utils/ipc'
 import { CgDetailsLess, CgDetailsMore } from 'react-icons/cg'
 import { TbCircleLetterD } from 'react-icons/tb'
-import { FaLocationCrosshairs } from 'react-icons/fa6'
+import { FaLocationCrosshairs, FaServer, FaNetworkWired, FaRegCirclePlay, FaRegCircleStop } from 'react-icons/fa6'
 import { RxLetterCaseCapitalize } from 'react-icons/rx'
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { GroupedVirtuoso, type GroupedVirtuosoHandle } from 'react-virtuoso'
@@ -21,6 +21,242 @@ import CollapseInput from '@renderer/components/base/collapse-input'
 import { includesIgnoreCase } from '@renderer/utils/includes'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { useTranslation } from 'react-i18next'
+
+// VPN UI 组件
+const VpnStatusCard: React.FC = () => {
+  const { t } = useTranslation();
+  const { groups = [] } = useGroups();
+  const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [selectedServer, setSelectedServer] = useState("");
+  const [uploadSpeed, setUploadSpeed] = useState(0);
+  const [downloadSpeed, setDownloadSpeed] = useState(0);
+  const [totalTraffic, setTotalTraffic] = useState({ upload: 0, download: 0 });
+  
+  // 模拟获取流量数据
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isConnected) {
+        setUploadSpeed(Math.floor(Math.random() * 1000));
+        setDownloadSpeed(Math.floor(Math.random() * 5000));
+        setTotalTraffic(prev => ({
+          upload: prev.upload + Math.floor(Math.random() * 100),
+          download: prev.download + Math.floor(Math.random() * 400)
+        }));
+      }
+    }, 2000);
+    
+    return (): void => clearInterval(interval);
+  }, [isConnected]);
+  
+  // 格式化速度和流量单位
+  const formatSpeed = (speed: number): string => {
+    if (speed < 1024) return `${speed} KB/s`;
+    return `${(speed / 1024).toFixed(2)} MB/s`;
+  };
+  
+  const formatTraffic = (bytes: number): string => {
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} MB`;
+    return `${(bytes / (1024 * 1024)).toFixed(2)} GB`;
+  };
+  
+  // 获取可用的服务器列表
+  const serverOptions = useMemo(() => {
+    const allServers: {name: string, icon?: string}[] = [];
+    
+    for (const group of groups) {
+      if (group.type === 'Selector' || group.type === 'URLTest') {
+        for (const proxy of group.all) {
+          if (typeof proxy !== 'string' && proxy.type !== 'Direct' && proxy.type !== 'Reject') {
+            allServers.push({
+              name: proxy.name,
+              icon: proxy.name.includes('🇺🇸') ? '🇺🇸' : 
+                    proxy.name.includes('🇯🇵') ? '🇯🇵' : 
+                    proxy.name.includes('🇸🇬') ? '🇸🇬' : 
+                    proxy.name.includes('🇭🇰') ? '🇭🇰' : undefined
+            });
+          }
+        }
+      }
+    }
+    
+    return [...new Map(allServers.map(server => [server.name, server])).values()];
+  }, [groups]);
+  
+  // 处理连接/断开
+  const handleToggleConnection = async (): Promise<void> => {
+    if (!isConnected && !selectedServer && serverOptions.length > 0) {
+      // 如果未选择服务器，默认选第一个
+      setSelectedServer(serverOptions[0].name);
+    }
+    
+    setIsConnecting(true);
+    
+    try {
+      // 模拟网络延迟
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // 切换连接状态
+      const newConnectedState = !isConnected;
+      setIsConnected(newConnectedState);
+      
+      // 实际应用中，这里应调用真实的连接/断开API
+      // 如果已经选择了代理，可以用 mihomoChangeProxy 切换
+      if (selectedServer && groups.length > 0) {
+        await mihomoChangeProxy(groups[0].name, newConnectedState ? selectedServer : 'DIRECT');
+        
+        if (!newConnectedState) {
+          // 断开连接
+          setUploadSpeed(0);
+          setDownloadSpeed(0);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to change proxy:', error);
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  // 按钮文本和颜色逻辑
+  const buttonText = isConnected ? t('断开连接') : t('连接');
+  const buttonColor = isConnected ? "danger" : "primary";
+  
+  // 连接状态文本
+  const statusText = isConnecting 
+    ? (isConnected ? t('正在断开...') : t('正在连接...'))
+    : (isConnected ? t('已连接') : t('未连接'));
+
+  return (
+    <Card className="mb-4 border-1 shadow-sm">
+      <CardBody>
+        <div className="flex flex-col space-y-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <FaNetworkWired className="text-2xl text-primary" />
+              <h2 className="text-xl font-semibold">{t('VPN状态')}</h2>
+              <Chip color={isConnecting ? "warning" : isConnected ? "success" : "default"} variant="flat">
+                {statusText}
+              </Chip>
+            </div>
+            <Button
+              color={buttonColor}
+              startContent={
+                isConnecting ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-current rounded-full border-t-transparent" />
+                ) : (
+                  <div className="transform transition-transform duration-300 ease-in-out">
+                    {isConnected ? <FaRegCircleStop /> : <FaRegCirclePlay />}
+                  </div>
+                )
+              }
+              onPress={handleToggleConnection}
+              disabled={isConnecting}
+              className="transition-all duration-300 ease-in-out hover:scale-105 active:scale-95"
+            >
+              {buttonText}
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="col-span-1 md:col-span-2">
+              <div className="flex flex-col space-y-3">
+                <div className="flex items-center">
+                  <FaServer className="mr-2 text-foreground-500" />
+                  <label htmlFor="server-select" className="text-sm text-foreground-500 mr-2">{t('服务器')}:</label>
+                  <Select
+                    id="server-select"
+                    size="sm"
+                    className="flex-grow"
+                    placeholder={t('选择服务器')}
+                    value={selectedServer}
+                    onChange={(e) => setSelectedServer(e.target.value)}
+                    disabled={isConnected || isConnecting}
+                  >
+                    {serverOptions.map((server) => (
+                      <SelectItem key={server.name} value={server.name}>
+                        <div className="flex items-center">
+                          {server.icon && <span className="mr-1">{server.icon}</span>}
+                          {server.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>{t('下载')}: {formatSpeed(downloadSpeed)}</span>
+                      <span>{t('总计')}: {formatTraffic(totalTraffic.download)}</span>
+                    </div>
+                    <Progress 
+                      size="sm" 
+                      color="success" 
+                      value={Math.min(downloadSpeed / 50, 100)} 
+                      className="h-2 transition-all duration-700 ease-in-out"
+                    />
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between text-sm mb-1">
+                      <span>{t('上传')}: {formatSpeed(uploadSpeed)}</span>
+                      <span>{t('总计')}: {formatTraffic(totalTraffic.upload)}</span>
+                    </div>
+                    <Progress 
+                      size="sm" 
+                      color="warning" 
+                      value={Math.min(uploadSpeed / 20, 100)} 
+                      className="h-2 transition-all duration-700 ease-in-out"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex flex-col justify-center items-center">
+              <Tooltip content={isConnected ? t('连接信息安全') : t('未连接')}>
+                <div className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500 ease-in-out ${
+                  isConnecting 
+                    ? 'bg-warning/20 animate-pulse' 
+                    : isConnected 
+                      ? 'bg-success/20' 
+                      : 'bg-default/20'
+                }`}>
+                  <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500 ease-in-out ${
+                    isConnecting 
+                      ? 'bg-warning/30' 
+                      : isConnected 
+                        ? 'bg-success/30' 
+                        : 'bg-default/30'
+                  }`}>
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl transition-all duration-500 ease-in-out transform ${
+                      isConnecting ? 'animate-pulse bg-warning text-white' : 
+                      isConnected ? 'bg-success text-white' : 'bg-default-100'
+                    } ${isConnecting ? 'scale-95' : 'scale-100'}`}>
+                      {isConnecting 
+                        ? <div className="animate-spin h-8 w-8 border-3 border-current rounded-full border-t-transparent" />
+                        : isConnected ? "✓" : "✗"
+                      }
+                    </div>
+                  </div>
+                </div>
+              </Tooltip>
+              <p className="mt-2 text-sm text-center text-foreground-500 transition-opacity duration-300">
+                {isConnecting 
+                  ? t('正在处理您的请求...') 
+                  : isConnected 
+                    ? t('您的连接已加密') 
+                    : t('连接VPN以保护您的网络')
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+};
 
 const GROUP_EXPAND_STATE_KEY = 'proxy_group_expand_state'
 
@@ -244,6 +480,9 @@ const Proxies: React.FC = () => {
         </>
       }
     >
+      {/* 添加VPN状态卡片 */}
+      <VpnStatusCard />
+      
       {mode === 'direct' ? (
         <div className="h-full w-full flex justify-center items-center">
           <div className="flex flex-col items-center">
