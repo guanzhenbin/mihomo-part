@@ -47,7 +47,7 @@ mac:
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
   artifactName: ${name}-macos-${version}-${arch}.${ext}
-  hardenedRuntime: true
+  hardenedRuntime: false
   gatekeeperAssess: false
   identity: null
 pkg:
