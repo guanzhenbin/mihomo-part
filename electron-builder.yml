@@ -38,7 +38,7 @@ nsis:
   createDesktopShortcut: always
 mac:
   target:
-    - pkg
+    - dmg
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:
     - NSCameraUsageDescription: Application requests access to the device's camera.
@@ -50,12 +50,13 @@ mac:
   hardenedRuntime: false
   gatekeeperAssess: false
   identity: null
-pkg:
-  allowAnywhere: false
-  allowCurrentUserHome: false
-  background:
-    alignment: bottomleft
-    file: build/background.png
+dmg:
+  background: build/background.png
+  icon: build/icon.icns
+  iconSize: 128
+  window:
+    width: 540
+    height: 380
 linux:
   desktop:
     Name: Mihomo Party
