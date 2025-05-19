@@ -219,7 +219,7 @@ jobs:
           for pkg_name in $(ls -1 dist/*.pkg); do
             pkg_name=$(ls -1 dist/*.pkg)
             mv $pkg_name Unsigned-Workbench.pkg
-            productsign --sign "Developer ID Installer: Prometheus Advertising Corp (489PDK5LP3)" Unsigned-Workbench.pkg $pkg_name
+            productsign --sign "Developer ID Installer: Prometheus Advertising Corp (2JVCY8F276)" Unsigned-Workbench.pkg $pkg_name
             rm -f Unsigned-Workbench.pkg
             xcrun notarytool submit $pkg_name --apple-id $APPLE_ID --team-id $APPLE_TEAM_ID --password $APPLE_APP_SPECIFIC_PASSWORD --wait
           done
@@ -295,7 +295,7 @@ jobs:
           for pkg_name in $(ls -1 dist/*.pkg); do
             pkg_name=$(ls -1 dist/*.pkg)
             mv $pkg_name Unsigned-Workbench.pkg
-            productsign --sign "Developer ID Installer: Prometheus Advertising Corp (489PDK5LP3)" Unsigned-Workbench.pkg $pkg_name
+            productsign --sign "Developer ID Installer: Prometheus Advertising Corp (2JVCY8F276)" Unsigned-Workbench.pkg $pkg_name
             rm -f Unsigned-Workbench.pkg
             xcrun notarytool submit $pkg_name --apple-id $APPLE_ID --team-id $APPLE_TEAM_ID --password $APPLE_APP_SPECIFIC_PASSWORD --wait
           done
