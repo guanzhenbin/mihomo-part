@@ -10,6 +10,7 @@ import ShortcutConfig from '@renderer/components/settings/shortcut-config'
 import { FaTelegramPlane } from 'react-icons/fa'
 import SiderConfig from '@renderer/components/settings/sider-config'
 import SubStoreConfig from '@renderer/components/settings/substore-config'
+import LogoutButton from '@renderer/components/settings/logout-button'
 import { useTranslation } from 'react-i18next'
 
 const Settings: React.FC = () => {
@@ -66,6 +67,9 @@ const Settings: React.FC = () => {
       <MihomoConfig />
       <ShortcutConfig />
       <Actions />
+      <div className="flex justify-center mt-6">
+        <LogoutButton />
+      </div>
     </BasePage>
   )
 }

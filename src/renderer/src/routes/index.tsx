@@ -13,7 +13,12 @@ import Resources from '@renderer/pages/resources'
 import DNS from '@renderer/pages/dns'
 import Sniffer from '@renderer/pages/sniffer'
 import SubStore from '@renderer/pages/substore'
+import Login from '@renderer/pages/login'
 const routes = [
+  {
+    path: '/login',
+    element: <Login />
+  },
   {
     path: '/mihomo',
     element: <Mihomo />

@@ -1,6 +1,7 @@
 import { useTheme } from 'next-themes'
 import { useEffect, useRef, useState } from 'react'
 import { NavigateFunction, useLocation, useNavigate, useRoutes } from 'react-router-dom'
+import { ProtectedRoute } from '@renderer/components/base/protected-route'
 import OutboundModeSwitcher from '@renderer/components/sider/outbound-mode-switcher'
 import SysproxySwitcher from '@renderer/components/sider/sysproxy-switcher'
 import TunSwitcher from '@renderer/components/sider/tun-switcher'
@@ -359,22 +360,27 @@ const App: React.FC = () => {
     substore: SubStoreCard
   }
 
+  if (location.pathname === '/login') {
+    return <div className="w-full h-[100vh]">{page}</div>
+  }
+
   return (
-    <div
-      onMouseMove={(e) => {
-        if (!resizing) return
-        if (e.clientX <= 150) {
-          setSiderWidthValue(narrowWidth)
-        } else if (e.clientX <= 250) {
-          setSiderWidthValue(250)
-        } else if (e.clientX >= 400) {
-          setSiderWidthValue(400)
-        } else {
-          setSiderWidthValue(e.clientX)
-        }
-      }}
-      className={`w-full h-[100vh] flex ${resizing ? 'cursor-ew-resize' : ''}`}
-    >
+    <ProtectedRoute>
+      <div
+        onMouseMove={(e) => {
+          if (!resizing) return
+          if (e.clientX <= 150) {
+            setSiderWidthValue(narrowWidth)
+          } else if (e.clientX <= 250) {
+            setSiderWidthValue(250)
+          } else if (e.clientX >= 400) {
+            setSiderWidthValue(400)
+          } else {
+            setSiderWidthValue(e.clientX)
+          }
+        }}
+        className={`w-full h-[100vh] flex ${resizing ? 'cursor-ew-resize' : ''}`}
+      >
       {siderWidthValue === narrowWidth ? (
         <div style={{ width: `${narrowWidth}px` }} className="side h-full">
           <div className="app-drag flex justify-center items-center z-40 bg-transparent h-[49px]">
@@ -474,6 +480,7 @@ const App: React.FC = () => {
         {page}
       </div>
     </div>
+    </ProtectedRoute>
   )
 }
 
