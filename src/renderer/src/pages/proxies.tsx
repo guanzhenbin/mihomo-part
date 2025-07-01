@@ -1,4 +1,4 @@
-import { Avatar, Button, Card, CardBody, Chip, Select, SelectItem, Tooltip, Progress } from '@heroui/react'
+import { Avatar, Button, Card, CardBody, Chip, Select, SelectItem, Progress } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import {
@@ -15,7 +15,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { GroupedVirtuoso, type GroupedVirtuosoHandle } from 'react-virtuoso'
 import ProxyItem from '@renderer/components/proxies/proxy-item'
 import { IoIosArrowBack } from 'react-icons/io'
-import { MdDoubleArrow, MdOutlineSpeed } from 'react-icons/md'
+import { MdDoubleArrow, MdOutlineSpeed, MdTrendingUp, MdNetworkCheck } from 'react-icons/md'
 import { useGroups } from '@renderer/hooks/use-groups'
 import CollapseInput from '@renderer/components/base/collapse-input'
 import { includesIgnoreCase } from '@renderer/utils/includes'
@@ -118,9 +118,8 @@ const VpnStatusCard: React.FC = () => {
     }
   };
 
-  // 按钮文本和颜色逻辑
+  // 按钮文本逻辑
   const buttonText = isConnected ? t('断开连接') : t('连接');
-  const buttonColor = isConnected ? "danger" : "primary";
   
   // 连接状态文本
   const statusText = isConnecting 
@@ -128,19 +127,33 @@ const VpnStatusCard: React.FC = () => {
     : (isConnected ? t('已连接') : t('未连接'));
 
   return (
-    <Card className="mb-4 border-1 shadow-sm">
-      <CardBody>
-        <div className="flex flex-col space-y-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <FaNetworkWired className="text-2xl text-primary" />
-              <h2 className="text-xl font-semibold">{t('VPN状态')}</h2>
-              <Chip color={isConnecting ? "warning" : isConnected ? "success" : "default"} variant="flat">
-                {statusText}
-              </Chip>
-            </div>
+    <Card className="vpn-status-card">
+      <CardBody className="p-6">
+        {/* 顶部状态栏 - 仿照加速器页面风格 */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
+              代理连接概览
+            </h1>
+            <p className="text-slate-400 mt-1">实时网络代理监控</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Chip 
+              variant="flat" 
+              color={isConnected ? "success" : "default"}
+              className="bg-slate-800/50 border border-slate-700"
+            >
+              {isConnected ? "已连接" : "未连接"}
+            </Chip>
             <Button
-              color={buttonColor}
+              color={isConnected ? "danger" : "primary"}
+              variant="shadow"
+              size="lg"
+              className={`min-w-[120px] font-medium transition-all duration-300 ${
+                isConnected 
+                  ? 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700' 
+                  : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700'
+              } shadow-lg hover:shadow-xl`}
               startContent={
                 isConnecting ? (
                   <div className="animate-spin h-4 w-4 border-2 border-current rounded-full border-t-transparent" />
@@ -152,105 +165,232 @@ const VpnStatusCard: React.FC = () => {
               }
               onPress={handleToggleConnection}
               disabled={isConnecting}
-              className="transition-all duration-300 ease-in-out hover:scale-105 active:scale-95"
             >
               {buttonText}
             </Button>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="col-span-1 md:col-span-2">
-              <div className="flex flex-col space-y-3">
-                <div className="flex items-center">
-                  <FaServer className="mr-2 text-foreground-500" />
-                  <label htmlFor="server-select" className="text-sm text-foreground-500 mr-2">{t('服务器')}:</label>
-                  <Select
-                    id="server-select"
-                    size="sm"
-                    className="flex-grow"
-                    placeholder={t('选择服务器')}
-                    value={selectedServer}
-                    onChange={(e) => setSelectedServer(e.target.value)}
-                    disabled={isConnected || isConnecting}
-                  >
-                    {serverOptions.map((server) => (
-                      <SelectItem key={server.name} value={server.name}>
-                        <div className="flex items-center">
-                          {server.icon && <span className="mr-1">{server.icon}</span>}
-                          {server.name}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </Select>
+        </div>
+
+        {/* 统计卡片 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="accelerator-stats-card">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-sm">连接状态</p>
+                  <p className="text-2xl font-bold text-white">{isConnected ? "已连接" : "未连接"}</p>
                 </div>
-                
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>{t('下载')}: {formatSpeed(downloadSpeed)}</span>
-                      <span>{t('总计')}: {formatTraffic(totalTraffic.download)}</span>
-                    </div>
-                    <Progress 
-                      size="sm" 
-                      color="success" 
-                      value={Math.min(downloadSpeed / 50, 100)} 
-                      className="h-2 transition-all duration-700 ease-in-out"
-                    />
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span>{t('上传')}: {formatSpeed(uploadSpeed)}</span>
-                      <span>{t('总计')}: {formatTraffic(totalTraffic.upload)}</span>
-                    </div>
-                    <Progress 
-                      size="sm" 
-                      color="warning" 
-                      value={Math.min(uploadSpeed / 20, 100)} 
-                      className="h-2 transition-all duration-700 ease-in-out"
-                    />
-                  </div>
+                <div className="p-3 bg-blue-500/20 rounded-lg">
+                  <FaNetworkWired className="text-blue-400 text-xl" />
                 </div>
               </div>
-            </div>
-            
-            <div className="flex flex-col justify-center items-center">
-              <Tooltip content={isConnected ? t('连接信息安全') : t('未连接')}>
-                <div className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-500 ease-in-out ${
-                  isConnecting 
-                    ? 'bg-warning/20 animate-pulse' 
-                    : isConnected 
-                      ? 'bg-success/20' 
-                      : 'bg-default/20'
-                }`}>
-                  <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-500 ease-in-out ${
-                    isConnecting 
-                      ? 'bg-warning/30' 
-                      : isConnected 
-                        ? 'bg-success/30' 
-                        : 'bg-default/30'
-                  }`}>
-                    <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl transition-all duration-500 ease-in-out transform ${
-                      isConnecting ? 'animate-pulse bg-warning text-white' : 
-                      isConnected ? 'bg-success text-white' : 'bg-default-100'
-                    } ${isConnecting ? 'scale-95' : 'scale-100'}`}>
-                      {isConnecting 
-                        ? <div className="animate-spin h-8 w-8 border-3 border-current rounded-full border-t-transparent" />
-                        : isConnected ? "✓" : "✗"
-                      }
+              <div className="mt-4 flex items-center">
+                <div className={`w-2 h-2 rounded-full mr-2 ${
+                  isConnected ? 'bg-green-400 animate-pulse' : 'bg-gray-400'
+                }`} />
+                <span className="text-sm text-slate-400">{statusText}</span>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="accelerator-stats-card">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-sm">下载速度</p>
+                  <p className="text-2xl font-bold text-white">{formatSpeed(downloadSpeed)}</p>
+                </div>
+                <div className="p-3 bg-green-500/20 rounded-lg">
+                  <MdTrendingUp className="text-green-400 text-xl" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <Progress 
+                  value={Math.min(downloadSpeed / 50, 100)} 
+                  color="success"
+                  size="sm"
+                  className="w-full"
+                  classNames={{
+                    track: "bg-slate-700",
+                    indicator: "bg-gradient-to-r from-green-500 to-emerald-500"
+                  }}
+                />
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="accelerator-stats-card">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-sm">上传速度</p>
+                  <p className="text-2xl font-bold text-white">{formatSpeed(uploadSpeed)}</p>
+                </div>
+                <div className="p-3 bg-orange-500/20 rounded-lg">
+                  <MdNetworkCheck className="text-orange-400 text-xl" />
+                </div>
+              </div>
+              <div className="mt-4">
+                <Progress 
+                  value={Math.min(uploadSpeed / 20, 100)} 
+                  color="warning"
+                  size="sm"
+                  className="w-full"
+                  classNames={{
+                    track: "bg-slate-700",
+                    indicator: "bg-gradient-to-r from-orange-500 to-yellow-500"
+                  }}
+                />
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="accelerator-stats-card">
+            <CardBody className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-slate-400 text-sm">当前服务器</p>
+                  <p className="text-lg font-bold text-white truncate">{selectedServer || "未选择"}</p>
+                </div>
+                <div className="p-3 bg-purple-500/20 rounded-lg">
+                  <FaServer className="text-purple-400 text-xl" />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center">
+                <span className="text-sm text-slate-400">
+                  {selectedServer ? "已配置" : "请选择服务器"}
+                </span>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* 主要配置区域 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 服务器配置 */}
+          <div className="lg:col-span-2 space-y-6">
+            <Card className="accelerator-main-card">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-blue-500/20 rounded-lg">
+                      <FaServer className="text-blue-400 text-xl" />
+                    </div>
+                    <h3 className="text-xl font-bold text-white">服务器配置</h3>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-300 mb-3">选择代理服务器</label>
+                                         <Select
+                       placeholder="请选择代理服务器"
+                       value={selectedServer}
+                       onChange={(e) => setSelectedServer(e.target.value)}
+                       disabled={isConnected || isConnecting}
+                       className="liquid-glass-select"
+                       classNames={{
+                         trigger: "bg-white/5 border-white/15 hover:bg-white/10 focus:border-blue-400/50 backdrop-blur-lg",
+                         value: "text-white font-medium",
+                         listbox: "bg-black/90 backdrop-blur-xl border border-white/10",
+                         popoverContent: "bg-black/80 backdrop-blur-xl border border-white/15 rounded-2xl"
+                       }}
+                     >
+                      {serverOptions.map((server) => (
+                        <SelectItem key={server.name} value={server.name}>
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center">
+                              {server.icon && <span className="mr-2">{server.icon}</span>}
+                              <span className="font-medium text-white">{server.name}</span>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="accelerator-server-item p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                          <span className="text-sm text-slate-300">下载总计</span>
+                        </div>
+                        <span className="text-sm font-medium text-white">{formatTraffic(totalTraffic.download)}</span>
+                      </div>
+                    </div>
+
+                    <div className="accelerator-server-item p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
+                          <span className="text-sm text-slate-300">上传总计</span>
+                        </div>
+                        <span className="text-sm font-medium text-white">{formatTraffic(totalTraffic.upload)}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </Tooltip>
-              <p className="mt-2 text-sm text-center text-foreground-500 transition-opacity duration-300">
-                {isConnecting 
-                  ? t('正在处理您的请求...') 
-                  : isConnected 
-                    ? t('您的连接已加密') 
-                    : t('连接VPN以保护您的网络')
-                }
-              </p>
-            </div>
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* 状态监控 */}
+          <div className="space-y-6">
+            <Card className="accelerator-main-card">
+              <CardBody className="p-6">
+                <h3 className="text-xl font-bold text-white mb-6">连接监控</h3>
+                
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="relative w-32 h-32 mx-auto mb-4">
+                      <div className="absolute inset-0 rounded-full border-4 border-slate-700"></div>
+                      <div 
+                        className={`absolute inset-0 rounded-full border-4 transition-all duration-1000 ${
+                          isConnected 
+                            ? 'border-t-blue-500 border-r-blue-500' 
+                            : 'border-t-slate-600 border-r-slate-600'
+                        }`}
+                        style={{ 
+                          transform: `rotate(${(isConnected ? 270 : 0)}deg)` 
+                        }}
+                      ></div>
+                      <div className="absolute inset-4 bg-slate-800 rounded-full flex items-center justify-center">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-white">{isConnected ? '100' : '0'}%</p>
+                          <p className="text-xs text-slate-400">连接率</p>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-400">代理连接状态</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="accelerator-server-item flex items-center justify-between p-3">
+                      <div className="flex items-center space-x-3">
+                        <FaNetworkWired className="text-blue-400" />
+                        <span className="text-sm text-slate-300">连接状态</span>
+                      </div>
+                      <Chip 
+                        size="sm" 
+                        color={isConnected ? "success" : "default"}
+                        variant="flat"
+                      >
+                        {isConnected ? "已连接" : "未连接"}
+                      </Chip>
+                    </div>
+
+                    <div className="accelerator-server-item flex items-center justify-between p-3">
+                      <div className="flex items-center space-x-3">
+                        <FaServer className="text-purple-400" />
+                        <span className="text-sm text-slate-300">代理模式</span>
+                      </div>
+                      <span className="text-sm font-medium text-white">自动</span>
+                    </div>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
           </div>
         </div>
       </CardBody>
@@ -434,13 +574,14 @@ const Proxies: React.FC = () => {
   return (
     <BasePage
       title={t('proxies.title')}
+      contentClassName="proxies-page-container"
       header={
         <>
           <Button
             size="sm"
             isIconOnly
             variant="light"
-            className="app-nodrag"
+            className="app-nodrag header-button"
             onPress={() => {
               patchAppConfig({
                 proxyDisplayOrder:
@@ -453,18 +594,18 @@ const Proxies: React.FC = () => {
             }}
           >
             {proxyDisplayOrder === 'default' ? (
-              <TbCircleLetterD className="text-lg" title={t('proxies.order.default')} />
+              <TbCircleLetterD className="text-lg text-white/70" title={t('proxies.order.default')} />
             ) : proxyDisplayOrder === 'delay' ? (
-              <MdOutlineSpeed className="text-lg" title={t('proxies.order.delay')} />
+              <MdOutlineSpeed className="text-lg text-white/70" title={t('proxies.order.delay')} />
             ) : (
-              <RxLetterCaseCapitalize className="text-lg" title={t('proxies.order.name')} />
+              <RxLetterCaseCapitalize className="text-lg text-white/70" title={t('proxies.order.name')} />
             )}
           </Button>
           <Button
             size="sm"
             isIconOnly
             variant="light"
-            className="app-nodrag"
+            className="app-nodrag header-button"
             onPress={() => {
               patchAppConfig({
                 proxyDisplayMode: proxyDisplayMode === 'simple' ? 'full' : 'simple'
@@ -472,9 +613,9 @@ const Proxies: React.FC = () => {
             }}
           >
             {proxyDisplayMode === 'full' ? (
-              <CgDetailsMore className="text-lg" title={t('proxies.mode.full')} />
+              <CgDetailsMore className="text-lg text-white/70" title={t('proxies.mode.full')} />
             ) : (
-              <CgDetailsLess className="text-lg" title={t('proxies.mode.simple')} />
+              <CgDetailsLess className="text-lg text-white/70" title={t('proxies.mode.simple')} />
             )}
           </Button>
         </>
@@ -523,12 +664,13 @@ const Proxies: React.FC = () => {
               }
               return groups[index] ? (
                 <div
-                  className={`w-full pt-2 ${index === groupCounts.length - 1 && !isOpen[index] ? 'pb-2' : ''} px-2`}
+                  className={`w-full pt-3 ${index === groupCounts.length - 1 && !isOpen[index] ? 'pb-3' : ''} px-3`}
                 >
                   <Card
                     as="div"
                     isPressable
                     fullWidth
+                    className="proxy-group-header"
                     onPress={() => {
                       setIsOpen((prev) => {
                         const newOpen = [...prev]
@@ -596,6 +738,7 @@ const Proxies: React.FC = () => {
                             variant="light"
                             size="sm"
                             isIconOnly
+                            className="header-button"
                             onPress={() => {
                               if (!isOpen[index]) {
                                 setIsOpen((prev) => {
@@ -619,7 +762,7 @@ const Proxies: React.FC = () => {
                               })
                             }}
                           >
-                            <FaLocationCrosshairs className="text-lg text-foreground-500" />
+                            <FaLocationCrosshairs className="text-lg text-white/70" />
                           </Button>
                           <Button
                               title={t('proxies.delay.test')}
@@ -627,11 +770,12 @@ const Proxies: React.FC = () => {
                             isLoading={delaying[index]}
                             size="sm"
                             isIconOnly
+                            className="header-button"
                             onPress={() => {
                               onGroupDelay(index)
                             }}
                           >
-                            <MdOutlineSpeed className="text-lg text-foreground-500" />
+                            <MdOutlineSpeed className="text-lg text-white/70" />
                           </Button>
                           <IoIosArrowBack
                             className={`transition duration-200 ml-2 h-[32px] text-lg text-foreground-500 ${isOpen[index] ? '-rotate-90' : ''}`}
@@ -658,7 +802,7 @@ const Proxies: React.FC = () => {
                       ? { gridTemplateColumns: `repeat(${proxyCols}, minmax(0, 1fr))` }
                       : {}
                   }
-                  className={`grid ${proxyCols === 'auto' ? 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : ''} ${groupIndex === groupCounts.length - 1 && innerIndex === groupCounts[groupIndex] - 1 ? 'pb-2' : ''} gap-2 pt-2 mx-2`}
+                  className={`grid ${proxyCols === 'auto' ? 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : ''} ${groupIndex === groupCounts.length - 1 && innerIndex === groupCounts[groupIndex] - 1 ? 'pb-3' : ''} gap-3 pt-3 mx-3`}
                 >
                   {Array.from({ length: cols }).map((_, i) => {
                     if (!allProxies[groupIndex][innerIndex * cols + i]) return null

@@ -144,8 +144,7 @@ const MihomoConfig: React.FC = () => {
       {platform === 'win32' && (
         <SettingItem title={t('mihomo.cpuPriority.title')} divider>
           <Select
-            classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
-            className="w-[150px]"
+            className="w-[150px] liquid-glass-select"
             size="sm"
             selectedKeys={new Set([mihomoCpuPriority])}
             disallowEmptySelection={true}

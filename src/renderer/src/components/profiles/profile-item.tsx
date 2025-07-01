@@ -184,14 +184,14 @@ const ProfileItem: React.FC<Props> = (props) => {
             setSelecting(false)
           })
         }}
-        className={`${isCurrent ? 'bg-primary' : ''} ${selecting ? 'blur-sm' : ''}`}
+        className={`gaming-card profile-grid-item transition-all duration-300 ${isCurrent ? 'bg-gradient-to-br from-orange-500 to-orange-600 border-orange-400 profile-card-active' : 'hover:border-orange-400/50'} ${selecting ? 'blur-sm' : ''}`}
       >
-        <div ref={setNodeRef} {...attributes} {...listeners} className="w-full h-full">
+        <div ref={setNodeRef} {...attributes} {...listeners} className="w-full h-full profile-card-content">
           <CardBody className="pb-1">
             <div className="flex justify-between h-[32px]">
               <h3
                 title={info?.name}
-                className={`text-ellipsis whitespace-nowrap overflow-hidden text-md font-bold leading-[32px] ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
+                className={`profile-card-title text-ellipsis whitespace-nowrap overflow-hidden text-md leading-[32px] ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
               >
                 {info?.name}
               </h3>
@@ -244,25 +244,25 @@ const ProfileItem: React.FC<Props> = (props) => {
             </div>
             {info.type === 'remote' && extra && (
               <div
-                className={`mt-2 flex justify-between ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
+                className={`profile-card-stats flex justify-between ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
               >
-                <small>{`${calcTraffic(usage)}/${calcTraffic(total)}`}</small>
+                <small className="font-medium">{`${calcTraffic(usage)}/${calcTraffic(total)}`}</small>
                 {profileDisplayDate === 'expire' ? (
-                  <Button
-                    size="sm"
-                    variant="light"
-                    className={`h-[20px] p-1 m-0 ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
-                    onPress={async () => {
-                      await patchAppConfig({ profileDisplayDate: 'update' })
-                    }}
-                  >
+                                      <Button
+                      size="sm"
+                      variant="light"
+                      className={`h-[20px] p-1 m-0 text-xs font-medium ${isCurrent ? 'text-primary-foreground hover:bg-white/10' : 'text-foreground hover:bg-orange-100'}`}
+                      onPress={async () => {
+                        await patchAppConfig({ profileDisplayDate: 'update' })
+                      }}
+                    >
                     {extra.expire ? dayjs.unix(extra.expire).format('YYYY-MM-DD') : t('profiles.neverExpire')}
                   </Button>
                 ) : (
                   <Button
                     size="sm"
                     variant="light"
-                    className={`h-[20px] p-1 m-0 ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
+                    className={`h-[20px] p-1 m-0 text-xs font-medium ${isCurrent ? 'text-primary-foreground hover:bg-white/10' : 'text-foreground hover:bg-orange-100'}`}
                     onPress={async () => {
                       await patchAppConfig({ profileDisplayDate: 'expire' })
                     }}
@@ -276,26 +276,26 @@ const ProfileItem: React.FC<Props> = (props) => {
           <CardFooter className="pt-0">
             {info.type === 'remote' && !extra && (
               <div
-                className={`w-full mt-2 flex justify-between ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
+                className={`profile-card-stats w-full flex justify-between ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
               >
                 <Chip
                   size="sm"
                   variant="bordered"
-                  className={`${isCurrent ? 'text-primary-foreground border-primary-foreground' : 'border-primary text-primary'}`}
+                  className={`profile-card-chip ${isCurrent ? 'text-primary-foreground border-primary-foreground' : 'border-primary text-primary'}`}
                 >
                     {t('profiles.remote')}
                 </Chip>
-                <small>{dayjs(info.updated).fromNow()}</small>
+                <small className="font-medium">{dayjs(info.updated).fromNow()}</small>
               </div>
             )}
             {info.type === 'local' && (
               <div
-                className={`mt-2 flex justify-between ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
+                className={`profile-card-stats flex justify-between ${isCurrent ? 'text-primary-foreground' : 'text-foreground'}`}
               >
                 <Chip
                   size="sm"
                   variant="bordered"
-                  className={`${isCurrent ? 'text-primary-foreground border-primary-foreground' : 'border-primary text-primary'}`}
+                  className={`profile-card-chip ${isCurrent ? 'text-primary-foreground border-primary-foreground' : 'border-primary text-primary'}`}
                 >
                     {t('profiles.local')}
                 </Chip>
@@ -303,10 +303,14 @@ const ProfileItem: React.FC<Props> = (props) => {
             )}
             {extra && (
               <Progress
-                className="w-full"
-                  aria-label={t('profiles.trafficUsage')}
+                className="w-full profile-card-progress"
+                aria-label={t('profiles.trafficUsage')}
                 classNames={{
-                  indicator: isCurrent ? 'bg-primary-foreground' : 'bg-foreground'
+                  base: "max-w-full",
+                  track: "drop-shadow-md border border-default",
+                  indicator: isCurrent ? 'bg-gradient-to-r from-white to-orange-200' : 'bg-gradient-to-r from-orange-400 to-orange-600',
+                  label: "tracking-wider font-medium text-default-600",
+                  value: "text-foreground-500"
                 }}
                 value={calcPercent(extra?.upload, extra?.download, extra?.total)}
               />

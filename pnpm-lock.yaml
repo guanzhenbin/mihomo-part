@@ -93,6 +93,12 @@ importers:
       '@electron-toolkit/tsconfig':
         specifier: ^1.0.1
         version: 1.0.1(@types/node@22.13.1)
+      '@stagewise-plugins/react':
+        specifier: ^0.4.7
+        version: 0.4.7(@stagewise/toolbar@0.4.7)
+      '@stagewise/toolbar-react':
+        specifier: ^0.4.7
+        version: 0.4.7(@types/react@19.0.8)(react@19.0.0)
       '@types/adm-zip':
         specifier: ^0.5.6
         version: 0.5.7
@@ -2269,6 +2275,20 @@ packages:
   '@sindresorhus/is@4.6.0':
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
     engines: {node: '>=10'}
+
+  '@stagewise-plugins/react@0.4.7':
+    resolution: {integrity: sha512-o3pa/2Tc/Lo+e7OEEDx45vx2NczPgDyGYQHfCZzN0IHLVDm/mj5uSmi5Ldo2NjJdThK4hSQNA5MLc4zBhkUlNg==}
+    peerDependencies:
+      '@stagewise/toolbar': 0.4.7
+
+  '@stagewise/toolbar-react@0.4.7':
+    resolution: {integrity: sha512-of7J8uJiqq38VVxKMxO4dkshb6wOc32xx4epi+ODovMLOrN8Xv2KbYMUxEtoPEKGkZagIwEZWiXKhI8ra29NVw==}
+    peerDependencies:
+      '@types/react': '>=18.0.0'
+      react: '>=18.0.0'
+
+  '@stagewise/toolbar@0.4.7':
+    resolution: {integrity: sha512-xU+lDPiGEhFs6Vx5Xwy1y43VQJIul9muN5u0eXnMoFKJYL+ku931at3gTRVP/+4BEgAC4G8P5g3pACyYa0ikOA==}
 
   '@swc/helpers@0.5.15':
     resolution: {integrity: sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g==}
@@ -8570,6 +8590,18 @@ snapshots:
     optional: true
 
   '@sindresorhus/is@4.6.0': {}
+
+  '@stagewise-plugins/react@0.4.7(@stagewise/toolbar@0.4.7)':
+    dependencies:
+      '@stagewise/toolbar': 0.4.7
+
+  '@stagewise/toolbar-react@0.4.7(@types/react@19.0.8)(react@19.0.0)':
+    dependencies:
+      '@stagewise/toolbar': 0.4.7
+      '@types/react': 19.0.8
+      react: 19.0.0
+
+  '@stagewise/toolbar@0.4.7': {}
 
   '@swc/helpers@0.5.15':
     dependencies:

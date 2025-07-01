@@ -174,6 +174,13 @@ async function migration(): Promise<void> {
   if (useSubStore && !siderOrder.includes('substore')) {
     await patchAppConfig({ siderOrder: [...siderOrder, 'substore'] })
   }
+  
+  // add new menu items
+  const newMenuItems = ['accelerator', 'region', 'package', 'profileCenter']
+  const missingItems = newMenuItems.filter(item => !siderOrder.includes(item))
+  if (missingItems.length > 0) {
+    await patchAppConfig({ siderOrder: [...siderOrder, ...missingItems] })
+  }
   // add default skip auth prefix
   if (!skipAuthPrefixes) {
     await patchControledMihomoConfig({ 'skip-auth-prefixes': ['127.0.0.1/32'] })

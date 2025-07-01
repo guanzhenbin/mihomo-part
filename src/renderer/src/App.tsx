@@ -2,9 +2,9 @@ import { useTheme } from 'next-themes'
 import { useEffect, useRef, useState } from 'react'
 import { NavigateFunction, useLocation, useNavigate, useRoutes } from 'react-router-dom'
 import { ProtectedRoute } from '@renderer/components/base/protected-route'
+import StagewiseToolbarWrapper from '@renderer/components/base/stagewise-toolbar'
 import OutboundModeSwitcher from '@renderer/components/sider/outbound-mode-switcher'
-import SysproxySwitcher from '@renderer/components/sider/sysproxy-switcher'
-import TunSwitcher from '@renderer/components/sider/tun-switcher'
+
 import { Button, Divider } from '@heroui/react'
 import { IoSettings } from 'react-icons/io5'
 import routes from '@renderer/routes'
@@ -17,22 +17,19 @@ import {
   DragEndEvent
 } from '@dnd-kit/core'
 import { SortableContext } from '@dnd-kit/sortable'
+import AcceleratorCard from '@renderer/components/sider/accelerator-card'
+import RegionCard from '@renderer/components/sider/region-card'
+import PackageCard from '@renderer/components/sider/package-card'
+import ProfileCenterCard from '@renderer/components/sider/profile-center-card'
 import ProfileCard from '@renderer/components/sider/profile-card'
 import ProxyCard from '@renderer/components/sider/proxy-card'
 import RuleCard from '@renderer/components/sider/rule-card'
-import DNSCard from '@renderer/components/sider/dns-card'
-import SniffCard from '@renderer/components/sider/sniff-card'
-import OverrideCard from '@renderer/components/sider/override-card'
-import ConnCard from '@renderer/components/sider/conn-card'
-import LogCard from '@renderer/components/sider/log-card'
-import MihomoCoreCard from '@renderer/components/sider/mihomo-core-card'
-import ResourceCard from '@renderer/components/sider/resource-card'
 import UpdaterButton from '@renderer/components/updater/updater-button'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { applyTheme, setNativeTheme, setTitleBarOverlay } from '@renderer/utils/ipc'
 import { platform } from '@renderer/utils/init'
 import { TitleBarOverlayOptions } from 'electron'
-import SubStoreCard from '@renderer/components/sider/substore-card'
+
 import MihomoIcon from './components/base/mihomo-icon'
 import { driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
@@ -54,19 +51,13 @@ const App: React.FC = () => {
     useWindowFrame = false,
     siderWidth = 250,
     siderOrder = [
-      'sysproxy',
-      'tun',
       'profile',
       'proxy',
       'rule',
-      'resource',
-      'override',
-      'connection',
-      'mihomo',
-      'dns',
-      'sniff',
-      'log',
-      'substore'
+      'accelerator',
+      'region',
+      'package',
+      'profileCenter'
     ]
   } = appConfig || {}
   const narrowWidth = platform === 'darwin' ? 70 : 60
@@ -329,35 +320,23 @@ const App: React.FC = () => {
   }
 
   const navigateMap = {
-    sysproxy: 'sysproxy',
-    tun: 'tun',
-    profile: 'profiles',
-    proxy: 'proxies',
-    mihomo: 'mihomo',
-    connection: 'connections',
-    dns: 'dns',
-    sniff: 'sniffer',
-    log: 'logs',
-    rule: 'rules',
-    resource: 'resources',
-    override: 'override',
-    substore: 'substore'
+    profile: '/profiles',
+    proxy: '/proxies',
+    rule: '/rules',
+    accelerator: '/accelerator',
+    region: '/region',
+    package: '/package',
+    profileCenter: '/profile-center'
   }
 
   const componentMap = {
-    sysproxy: SysproxySwitcher,
-    tun: TunSwitcher,
     profile: ProfileCard,
     proxy: ProxyCard,
-    mihomo: MihomoCoreCard,
-    connection: ConnCard,
-    dns: DNSCard,
-    sniff: SniffCard,
-    log: LogCard,
     rule: RuleCard,
-    resource: ResourceCard,
-    override: OverrideCard,
-    substore: SubStoreCard
+    accelerator: AcceleratorCard,
+    region: RegionCard,
+    package: PackageCard,
+    profileCenter: ProfileCenterCard
   }
 
   if (location.pathname === '/login') {
@@ -366,6 +345,8 @@ const App: React.FC = () => {
 
   return (
     <ProtectedRoute>
+      {/* StagewiseToolbar 只在开发模式下加载 */}
+      <StagewiseToolbarWrapper />
       <div
         onMouseMove={(e) => {
           if (!resizing) return
@@ -379,11 +360,11 @@ const App: React.FC = () => {
             setSiderWidthValue(e.clientX)
           }
         }}
-        className={`w-full h-[100vh] flex ${resizing ? 'cursor-ew-resize' : ''}`}
+        className={`w-full h-[100vh] flex enterprise-main enterprise-dashboard overflow-hidden ${resizing ? 'cursor-ew-resize' : ''}`}
       >
       {siderWidthValue === narrowWidth ? (
-        <div style={{ width: `${narrowWidth}px` }} className="side h-full">
-          <div className="app-drag flex justify-center items-center z-40 bg-transparent h-[49px]">
+        <div style={{ width: `${narrowWidth}px` }} className="side h-full enterprise-sidebar">
+          <div className="app-drag flex justify-center items-center z-40 bg-transparent h-[49px] enterprise-header">
             {platform !== 'darwin' && (
               <MihomoIcon className="h-[32px] leading-[32px] text-lg mx-[1px]" />
             )}
@@ -401,7 +382,7 @@ const App: React.FC = () => {
           <div className="mt-2 flex justify-center items-center h-[48px]">
             <Button
               size="sm"
-              className="app-nodrag"
+              className={`app-nodrag enterprise-menu-item ${location.pathname.includes('/settings') ? 'active' : ''}`}
               isIconOnly
               color={location.pathname.includes('/settings') ? 'primary' : 'default'}
               variant={location.pathname.includes('/settings') ? 'solid' : 'light'}
@@ -416,45 +397,78 @@ const App: React.FC = () => {
       ) : (
         <div
           style={{ width: `${siderWidthValue}px` }}
-          className="side h-full overflow-y-auto no-scrollbar"
+          className="side h-full overflow-y-auto no-scrollbar enterprise-sidebar"
         >
-          <div className="app-drag sticky top-0 z-40 backdrop-blur bg-transparent h-[49px]">
+          <div className="app-drag sticky top-0 z-40 backdrop-blur bg-transparent h-[64px] enterprise-header">
             <div
-              className={`flex justify-between p-2 ${!useWindowFrame && platform === 'darwin' ? 'ml-[60px]' : ''}`}
+              className={`flex justify-between items-center p-3 ${!useWindowFrame && platform === 'darwin' ? 'ml-[60px]' : ''}`}
             >
-              <div className="flex ml-1">
-                <MihomoIcon className="h-[32px] leading-[32px] text-lg mx-[1px]" />
-                <h3 className="text-lg font-bold leading-[32px]">ihomo Party</h3>
+              <div className="flex flex-col">
+                <h3 className="text-lg font-bold enterprise-brand">一键连</h3>
+                <span className="enterprise-version">v1.7.6</span>
               </div>
-              <UpdaterButton />
-              <Button
-                size="sm"
-                className="app-nodrag"
-                isIconOnly
-                color={location.pathname.includes('/settings') ? 'primary' : 'default'}
-                variant={location.pathname.includes('/settings') ? 'solid' : 'light'}
-                onPress={() => {
-                  navigate('/settings')
-                }}
-              >
-                <IoSettings className="text-[20px]" />
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* <UpdaterButton /> */}
+                <Button
+                  size="sm"
+                  className="app-nodrag enterprise-menu-item"
+                  isIconOnly
+                  color={location.pathname.includes('/settings') ? 'primary' : 'default'}
+                  variant={location.pathname.includes('/settings') ? 'solid' : 'light'}
+                  onPress={() => {
+                    navigate('/settings')
+                  }}
+                >
+                  <IoSettings className="text-[18px]" />
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="mt-2 mx-2">
+          <div className="mt-4 mx-3">
             <OutboundModeSwitcher />
           </div>
-          <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
-            <div className="grid grid-cols-2 gap-2 m-2">
-              <SortableContext items={order}>
-                {order.map((key: string) => {
-                  const Component = componentMap[key]
-                  if (!Component) return null
-                  return <Component key={key} />
-                })}
-              </SortableContext>
+          
+          {/* Sidebar Stats */}
+          <div className="enterprise-sidebar-stats">
+            <div className="enterprise-sidebar-stat-item">
+              <span className="enterprise-sidebar-stat-label">规则</span>
+              <span className="enterprise-sidebar-stat-value">全局</span>
             </div>
-          </DndContext>
+            <div className="enterprise-sidebar-stat-item">
+              <span className="enterprise-sidebar-stat-label">直连</span>
+              <span className="enterprise-sidebar-stat-value">yijianlian</span>
+            </div>
+            <div className="enterprise-sidebar-stat-item">
+              <span className="enterprise-sidebar-stat-label">流量</span>
+              <span className="enterprise-sidebar-stat-value">13.24 GB/100.0 GB</span>
+            </div>
+            <div className="enterprise-sidebar-progress">
+              <div className="enterprise-sidebar-progress-bar" style={{ width: '13%' }}></div>
+            </div>
+            <div className="flex justify-between mt-2 text-xs">
+              <span className="enterprise-sidebar-stat-label">代理组</span>
+              <span className="enterprise-sidebar-stat-value">4</span>
+            </div>
+            <div className="flex justify-between mt-1 text-xs">
+              <span className="enterprise-sidebar-stat-label">规则</span>
+              <span className="enterprise-sidebar-stat-value">514</span>
+            </div>
+          </div>
+          <nav className="mt-3 px-3 pb-4">
+            <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={onDragEnd}>
+              <div className="space-y-1">
+                <SortableContext items={order}>
+                  {order
+                    .filter((key: string) => ['accelerator', 'region', 'package', 'profileCenter'].includes(key))
+                    .map((key: string) => {
+                      const Component = componentMap[key]
+                      if (!Component) return null
+                      return <Component key={key} menuStyle={true} />
+                    })}
+                </SortableContext>
+              </div>
+            </DndContext>
+          </nav>
         </div>
       )}
 
@@ -466,16 +480,16 @@ const App: React.FC = () => {
           position: 'fixed',
           zIndex: 50,
           left: `${siderWidthValue - 2}px`,
-          width: '5px',
+          width: '4px',
           height: '100vh',
           cursor: 'ew-resize'
         }}
-        className={resizing ? 'bg-primary' : ''}
+        className={`resize-divider ${resizing ? 'active' : ''}`}
       />
       <Divider orientation="vertical" />
       <div
         style={{ width: `calc(100% - ${siderWidthValue + 1}px)` }}
-        className="main grow h-full overflow-y-auto"
+        className="main grow h-full overflow-hidden"
       >
         {page}
       </div>

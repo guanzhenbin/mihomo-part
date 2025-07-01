@@ -199,11 +199,12 @@ const Profiles: React.FC = () => {
     <BasePage
       ref={pageRef}
       title={t('profiles.title')}
+      contentClassName="profiles-content profiles-page-container"
       header={
         <Button
           size="sm"
           title={t('profiles.updateAll')}
-          className="app-nodrag"
+          className="app-nodrag header-button"
           variant="light"
           isIconOnly
           onPress={async () => {
@@ -220,46 +221,58 @@ const Profiles: React.FC = () => {
             setUpdating(false)
           }}
         >
-          <IoMdRefresh className={`text-lg ${updating ? 'animate-spin' : ''}`} />
+          <IoMdRefresh className={`text-lg text-white/70 ${updating ? 'animate-spin' : ''}`} />
         </Button>
       }
     >
-      <div className="sticky profiles-sticky top-0 z-40 bg-background">
-        <div className="flex p-2">
+      <div className="sticky profiles-sticky top-0 z-40">
+        <div className="profiles-import-area flex p-4 m-4">
           <Input
-            size="sm"
+            size="lg"
             value={url}
             onValueChange={setUrl}
             onKeyUp={handleInputKeyUp}
+            placeholder="输入订阅链接或拖拽配置文件..."
+            classNames={{
+              base: "flex-1",
+              input: "text-white placeholder-white/60",
+              inputWrapper: "profiles-sticky"
+            }}
             endContent={
               <>
                 <Button
                   size="sm"
                   isIconOnly
                   variant="light"
+                  className="header-button"
                   onPress={() => {
                     navigator.clipboard.readText().then((text) => {
                       setUrl(text)
                     })
                   }}
                 >
-                  <MdContentPaste className="text-lg" />
+                  <MdContentPaste className="text-lg text-white/70" />
                 </Button>
-                <Checkbox
-                  className="whitespace-nowrap"
-                  checked={useProxy}
-                  onValueChange={setUseProxy}
-                >
-                  {t('profiles.useProxy')}
-                </Checkbox>
+                <div className="flex items-center">
+                  <Checkbox
+                    className="whitespace-nowrap text-white/80 ml-3"
+                    classNames={{
+                      label: "text-white/80"
+                    }}
+                    checked={useProxy}
+                    onValueChange={setUseProxy}
+                  >
+                    {t('profiles.useProxy')}
+                  </Checkbox>
+                </div>
               </>
             }
           />
 
           <Button
-            size="sm"
+            size="lg"
             color="primary"
-            className="ml-2"
+            className="ml-4 px-6 font-medium"
             isDisabled={isUrlEmpty}
             isLoading={importing}
             onPress={handleImport}
@@ -277,8 +290,8 @@ const Profiles: React.FC = () => {
                 <Button
                   isLoading={subStoreImporting}
                   title="Sub-Store"
-                  className="ml-2 substore-import"
-                  size="sm"
+                  className="ml-3 substore-import"
+                  size="lg"
                   isIconOnly
                   color="primary"
                 >
@@ -344,7 +357,7 @@ const Profiles: React.FC = () => {
           )}
           <Dropdown>
             <DropdownTrigger>
-              <Button className="ml-2 new-profile" size="sm" isIconOnly color="primary">
+              <Button className="ml-3 new-profile" size="lg" isIconOnly color="primary">
                 <FaPlus />
               </Button>
             </DropdownTrigger>
@@ -379,7 +392,7 @@ const Profiles: React.FC = () => {
       </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <div
-          className={`${fileOver ? 'blur-sm' : ''} grid sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 m-2`}
+          className={`profiles-grid ${fileOver ? 'blur-sm profiles-drag-overlay' : ''} grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5`}
         >
           <SortableContext
             items={sortedItems.map((item) => {

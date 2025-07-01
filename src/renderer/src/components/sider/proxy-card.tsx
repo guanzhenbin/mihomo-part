@@ -1,4 +1,4 @@
-import { Button, Card, CardBody, CardFooter, Chip, Tooltip } from '@heroui/react'
+import { Button, Card, CardBody, CardFooter, Tooltip } from '@heroui/react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { LuGroup } from 'react-icons/lu'
@@ -7,15 +7,17 @@ import { useGroups } from '@renderer/hooks/use-groups'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import MenuItem from './menu-item'
 
 interface Props {
   iconOnly?: boolean
+  menuStyle?: boolean
 }
 
 const ProxyCard: React.FC<Props> = (props) => {
   const { t } = useTranslation()
   const { appConfig } = useAppConfig()
-  const { iconOnly } = props
+  const { iconOnly, menuStyle } = props
   const { proxyCardStatus = 'col-span-1' } = appConfig || {}
   const location = useLocation()
   const navigate = useNavigate()
@@ -42,6 +44,7 @@ const ProxyCard: React.FC<Props> = (props) => {
             isIconOnly
             color={match ? 'primary' : 'default'}
             variant={match ? 'solid' : 'light'}
+            className={`enterprise-menu-item ${match ? 'active' : ''}`}
             onPress={() => {
               navigate('/proxies')
             }}
@@ -52,6 +55,34 @@ const ProxyCard: React.FC<Props> = (props) => {
       </div>
     )
   }
+
+  if (menuStyle) {
+    return (
+      <div
+        style={{
+          position: 'relative',
+          transform: CSS.Transform.toString(transform),
+          transition,
+          zIndex: isDragging ? 'calc(infinity)' : undefined
+        }}
+        className="proxy-card"
+      >
+        <div
+          ref={setNodeRef}
+          {...attributes}
+          {...listeners}
+        >
+          <MenuItem
+            icon={<LuGroup />}
+            title={t('proxies.card.title')}
+            path="/proxies"
+            count={groups.length}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       style={{
@@ -67,7 +98,7 @@ const ProxyCard: React.FC<Props> = (props) => {
         ref={setNodeRef}
         {...attributes}
         {...listeners}
-        className={`${match ? 'bg-primary' : 'hover:bg-primary/30'} ${isDragging ? 'scale-[0.97] tap-highlight-transparent' : ''}`}
+        className={`gaming-card data-flow ${match ? 'bg-primary active' : 'hover:bg-primary/30'} ${isDragging ? 'scale-[0.97] tap-highlight-transparent' : ''}`}
       >
         <CardBody className="pb-1 pt-0 px-0">
           <div className="flex justify-between">
@@ -78,32 +109,17 @@ const ProxyCard: React.FC<Props> = (props) => {
               color="default"
             >
               <LuGroup
-                className={`${match ? 'text-primary-foreground' : 'text-foreground'} text-[24px] font-bold`}
+                className="text-[24px] font-bold text-white"
               />
             </Button>
-            <Chip
-              classNames={
-                match
-                  ? {
-                      base: 'border-primary-foreground',
-                      content: 'text-primary-foreground'
-                    }
-                  : {
-                      base: 'border-primary',
-                      content: 'text-primary'
-                    }
-              }
-              size="sm"
-              variant="bordered"
-              className="mr-2 mt-2"
-            >
+            <div className={`proxy-status-pill ${match ? 'connected' : ''} mr-2 mt-2`}>
               {groups.length}
-            </Chip>
+            </div>
           </div>
         </CardBody>
         <CardFooter className="pt-1">
           <h3
-            className={`text-md font-bold ${match ? 'text-primary-foreground' : 'text-foreground'}`}
+            className="text-md font-bold text-white"
           >
             {t('proxies.card.title')}
           </h3>

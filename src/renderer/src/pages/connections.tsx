@@ -154,7 +154,7 @@ const Connections: React.FC = () => {
             content={`${filteredConnections.length}`}
           >
             <Button
-              className="app-nodrag ml-1"
+              className="app-nodrag ml-1 header-button"
               title={t('connections.closeAll')}
               isIconOnly
               size="sm"
@@ -169,7 +169,7 @@ const Connections: React.FC = () => {
                 }
               }}
             >
-              {tab === 'active' ? <CgClose className="text-lg" /> : <CgTrash className="text-lg" />}
+              {tab === 'active' ? <CgClose className="text-lg text-white/70" /> : <CgTrash className="text-lg text-white/70" />}
             </Button>
           </Badge>
         </div>
@@ -257,7 +257,8 @@ const Connections: React.FC = () => {
           <Button
             size="sm"
             isIconOnly
-            className="bg-content2"
+            variant="light"
+            className="header-button"
             onPress={async () => {
               patchAppConfig({
                 connectionDirection: connectionDirection === 'asc' ? 'desc' : 'asc'
@@ -265,9 +266,9 @@ const Connections: React.FC = () => {
             }}
           >
             {connectionDirection === 'asc' ? (
-              <HiSortAscending className="text-lg" />
+              <HiSortAscending className="text-lg text-white/70" />
             ) : (
-              <HiSortDescending className="text-lg" />
+              <HiSortDescending className="text-lg text-white/70" />
             )}
           </Button>
         </div>

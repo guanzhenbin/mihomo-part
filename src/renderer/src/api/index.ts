@@ -25,8 +25,8 @@ export interface SendCodeRequest {
 }
 
 export interface PhoneLoginRequest {
-  phone: string
-  smsCode: string
+  phoneNumber: string
+  code: string
 }
 
 export interface SendCodeResponse {
@@ -49,9 +49,9 @@ export interface RefreshTokenResponse {
 class ApiManager {
   // 认证相关 API
   auth = {
-    // 邮箱密码登录
-    loginWithEmail: (email: string, password: string): Promise<LoginResponse> => {
-      return request.post<LoginResponse>('/auth/login', {
+    // 邮箱密码登录  
+    loginWithEmail: (email: string, password: string): Promise<any> => {
+      return request.post('/auth/login', {
         identifier: email,
         credential: password,
         loginType: 'email'
@@ -59,16 +59,19 @@ class ApiManager {
     },
 
     // 手机验证码登录
-    loginWithPhone: (phone: string, code: string): Promise<LoginResponse> => {
-      return request.post<LoginResponse>('/userServer/loginWithPhone', {
-        phone: phone,
-        smsCode: code,
+    loginWithPhone: (phone: string, code: string): Promise<any> => {
+      return request.post('/mobile/auth/sms/verify', {
+        phoneNumber: phone,
+        code: code,
       } as PhoneLoginRequest)
     },
 
     // 发送手机验证码
     sendSmsCode: (phone: string): Promise<SendCodeResponse> => {
-      return request.get<SendCodeResponse>(`/userServer/sendVerificationCode?phone=${phone}`)
+      console.log('📱 发送验证码请求:', { phone })
+      return request.post<SendCodeResponse>(`/mobile/auth/sms/send`, {
+        phoneNumber: phone,
+      })
     },
 
     // 刷新 token
@@ -84,8 +87,8 @@ class ApiManager {
     },
 
     // 获取用户信息
-    getUserInfo: (): Promise<LoginResponse['user']> => {
-      return request.get('/auth/me')
+    getUserInfo: (): Promise<any> => {
+      return request.get('/mobile/users/profile')
     }
   }
 

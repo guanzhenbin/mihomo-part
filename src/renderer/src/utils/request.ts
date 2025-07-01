@@ -21,7 +21,7 @@ class Request {
   constructor() {
     // 创建 axios 实例
     this.instance = axios.create({
-      baseURL: process.env.NODE_ENV === 'development' ? 'https://api.chatppt.shop/api' : '/api',
+      baseURL: process.env.NODE_ENV === 'development' ? 'https://kuranode.com/api' : '/api',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json'
@@ -42,7 +42,7 @@ class Request {
         // 添加认证 token
         const token = localStorage.getItem('authToken')
         if (token && !config.skipAuth) {
-          config.headers.Authorization = `Bearer ${token}`
+          config.headers.Authorization = `${token}`
         }
 
         // 添加请求时间戳
@@ -142,10 +142,17 @@ class Request {
           
           switch (status) {
             case 401:
-              // 未授权，清除 token 并跳转登录
+              // 如果是获取用户信息的请求失败，不自动清除token和跳转
+              if (config?.url?.includes('/mobile/users/profile')) {
+                return Promise.reject(new Error('获取用户信息失败'))
+              }
+              
+              // 其他401错误，清除 token 并跳转登录
               localStorage.removeItem('authToken')
               localStorage.removeItem('loginType')
               localStorage.removeItem('userIdentifier')
+              localStorage.removeItem('refreshToken')
+              localStorage.removeItem('tokenExpirationTime')
               
               // 如果不在登录页，跳转到登录页
               if (window.location.hash !== '#/login') {

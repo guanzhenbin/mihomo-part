@@ -30,7 +30,7 @@ const OutboundModeSwitcher: React.FC = () => {
       color="primary"
       selectedKey={mode}
       classNames={{
-        tabList: 'bg-content1 shadow-medium outbound-mode-card'
+        tabList: 'shadow-medium outbound-mode-card'
       }}
       onSelectionChange={(key: Key) => onChangeMode(key as OutboundMode)}
     >

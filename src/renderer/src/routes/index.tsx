@@ -1,18 +1,12 @@
 import { Navigate } from 'react-router-dom'
-import Override from '@renderer/pages/override'
+import Accelerator from '@renderer/pages/accelerator'
+import Region from '@renderer/pages/region'
+import Package from '@renderer/pages/package'
+import ProfileCenter from '@renderer/pages/profile-center'
+import Profiles from '@renderer/pages/profiles'
 import Proxies from '@renderer/pages/proxies'
 import Rules from '@renderer/pages/rules'
 import Settings from '@renderer/pages/settings'
-import Profiles from '@renderer/pages/profiles'
-import Logs from '@renderer/pages/logs'
-import Connections from '@renderer/pages/connections'
-import Mihomo from '@renderer/pages/mihomo'
-import Sysproxy from '@renderer/pages/sysproxy'
-import Tun from '@renderer/pages/tun'
-import Resources from '@renderer/pages/resources'
-import DNS from '@renderer/pages/dns'
-import Sniffer from '@renderer/pages/sniffer'
-import SubStore from '@renderer/pages/substore'
 import Login from '@renderer/pages/login'
 const routes = [
   {
@@ -20,16 +14,8 @@ const routes = [
     element: <Login />
   },
   {
-    path: '/mihomo',
-    element: <Mihomo />
-  },
-  {
-    path: '/sysproxy',
-    element: <Sysproxy />
-  },
-  {
-    path: '/tun',
-    element: <Tun />
+    path: '/profiles',
+    element: <Profiles />
   },
   {
     path: '/proxies',
@@ -40,44 +26,28 @@ const routes = [
     element: <Rules />
   },
   {
-    path: '/resources',
-    element: <Resources />
+    path: '/accelerator',
+    element: <Accelerator />
   },
   {
-    path: '/dns',
-    element: <DNS />
+    path: '/region',
+    element: <Region />
   },
   {
-    path: '/sniffer',
-    element: <Sniffer />
+    path: '/package',
+    element: <Package />
   },
   {
-    path: '/logs',
-    element: <Logs />
-  },
-  {
-    path: '/connections',
-    element: <Connections />
-  },
-  {
-    path: '/override',
-    element: <Override />
-  },
-  {
-    path: '/profiles',
-    element: <Profiles />
+    path: '/profile-center',
+    element: <ProfileCenter />
   },
   {
     path: '/settings',
     element: <Settings />
   },
   {
-    path: '/substore',
-    element: <SubStore />
-  },
-  {
     path: '/',
-    element: <Navigate to="/proxies" />
+    element: <Navigate to="/accelerator" />
   }
 ]
 

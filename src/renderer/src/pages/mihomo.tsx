@@ -689,7 +689,7 @@ const Mihomo: React.FC = () => {
             <Input
               size="sm"
               type="number"
-              className="w-[100px]"
+              className="w-[100px] liquid-glass-input"
               value={maxLogDays.toString()}
               onValueChange={(v) => {
                 patchAppConfig({ maxLogDays: parseInt(v) })
@@ -698,8 +698,7 @@ const Mihomo: React.FC = () => {
           </SettingItem>
           <SettingItem title={t('mihomo.logLevel')} divider>
             <Select
-              classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
-              className="w-[100px]"
+              className="w-[100px] liquid-glass-select"
               size="sm"
               aria-label={t('mihomo.selectLogLevel')}
               selectedKeys={new Set([logLevel])}
@@ -717,8 +716,7 @@ const Mihomo: React.FC = () => {
           </SettingItem>
           <SettingItem title={t('mihomo.findProcess')} divider>
             <Select
-              classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
-              className="w-[100px]"
+              className="w-[100px] liquid-glass-select"
               size="sm"
               aria-label={t('mihomo.selectFindProcessMode')}
               selectedKeys={new Set([findProcessMode])}

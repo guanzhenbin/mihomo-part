@@ -1,5 +1,9 @@
 export const defaultConfig: IAppConfig = {
   core: 'mihomo',
+  disableLoopbackDetector: false,
+  disableEmbedCA: false,
+  disableSystemCA: false,
+  skipSafePathCheck: false,
   silentStart: false,
   appTheme: 'system',
   useWindowFrame: false,
@@ -18,19 +22,13 @@ export const defaultConfig: IAppConfig = {
   controlSniff: true,
   nameserverPolicy: {},
   siderOrder: [
-    'sysproxy',
-    'tun',
     'profile',
-    'proxy',
+    'proxy', 
     'rule',
-    'resource',
-    'override',
-    'connection',
-    'mihomo',
-    'dns',
-    'sniff',
-    'log',
-    'substore'
+    'accelerator',
+    'region',
+    'package',
+    'profileCenter'
   ],
   siderWidth: 250,
   sysProxy: { enable: false, mode: 'manual' }

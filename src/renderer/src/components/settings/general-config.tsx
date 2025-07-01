@@ -3,15 +3,11 @@ import SettingCard from '../base/base-setting-card'
 import SettingItem from '../base/base-setting-item'
 import { Button, Input, Select, SelectItem, Switch, Tab, Tabs, Tooltip } from '@heroui/react'
 import { BiCopy, BiSolidFileImport } from 'react-icons/bi'
-import useSWR from 'swr'
 import {
   applyTheme,
-  checkAutoRun,
   closeFloatingWindow,
   closeTrayIcon,
   copyEnv,
-  disableAutoRun,
-  enableAutoRun,
   fetchThemes,
   getFilePath,
   importThemes,
@@ -32,8 +28,7 @@ import CSSEditorModal from './css-editor-modal'
 import { useTranslation } from 'react-i18next'
 
 const GeneralConfig: React.FC = () => {
-  const { t, i18n } = useTranslation()
-  const { data: enable = false, mutate: mutateEnable } = useSWR('checkAutoRun', checkAutoRun)
+  const { t } = useTranslation()
   const { appConfig, patchAppConfig } = useAppConfig()
   const [customThemes, setCustomThemes] = useState<{ key: string; label: string }[]>()
   const [openCSSEditor, setOpenCSSEditor] = useState(false)
@@ -54,8 +49,7 @@ const GeneralConfig: React.FC = () => {
     customTheme = 'default.css',
     envType = [platform === 'win32' ? 'powershell' : 'bash'],
     autoCheckUpdate,
-    appTheme = 'system',
-    language = 'zh-CN'
+    appTheme = 'system'
   } = appConfig || {}
 
   useEffect(() => {
@@ -78,48 +72,15 @@ const GeneralConfig: React.FC = () => {
         />
       )}
       <SettingCard>
-        <SettingItem title={t('settings.language')} divider>
-          <Select
-            classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
-            className="w-[150px]"
-            size="sm"
-            selectedKeys={[language]}
-            aria-label={t('settings.language')}
-            onSelectionChange={async (v) => {
-              const newLang = Array.from(v)[0] as 'zh-CN' | 'en-US' | 'ru-RU' | 'fa-IR'
-              await patchAppConfig({ language: newLang })
-              i18n.changeLanguage(newLang)
-            }}
-          >
-            <SelectItem key="zh-CN">中文简体</SelectItem>
-            <SelectItem key="en-US">English</SelectItem>
-            <SelectItem key="ru-RU">Русский</SelectItem>
-            <SelectItem key="fa-IR">فارسی</SelectItem>
-          </Select>
-        </SettingItem>
-        <SettingItem title={t('settings.autoStart')} divider>
-          <Switch
-            size="sm"
-            isSelected={enable}
-            onValueChange={async (v) => {
-              try {
-                if (v) {
-                  await enableAutoRun()
-                } else {
-                  await disableAutoRun()
-                }
-              } catch (e) {
-                alert(e)
-              } finally {
-                mutateEnable()
-              }
-            }}
-          />
-        </SettingItem>
         <SettingItem title={t('settings.autoCheckUpdate')} divider>
           <Switch
             size="sm"
             isSelected={autoCheckUpdate}
+            classNames={{
+              wrapper: "group-data-[selected=true]:bg-gradient-to-r from-amber-500 to-orange-500 group-data-[selected=false]:bg-white/15 border border-white/20",
+              thumb: "bg-white shadow-xl shadow-amber-500/30",
+              thumbIcon: "text-amber-500"
+            }}
             onValueChange={(v) => {
               patchAppConfig({ autoCheckUpdate: v })
             }}
@@ -129,6 +90,11 @@ const GeneralConfig: React.FC = () => {
           <Switch
             size="sm"
             isSelected={silentStart}
+            classNames={{
+              wrapper: "group-data-[selected=true]:bg-gradient-to-r from-amber-500 to-orange-500 group-data-[selected=false]:bg-white/15 border border-white/20",
+              thumb: "bg-white shadow-xl shadow-amber-500/30",
+              thumbIcon: "text-amber-500"
+            }}
             onValueChange={(v) => {
               patchAppConfig({ silentStart: v })
             }}
@@ -137,8 +103,18 @@ const GeneralConfig: React.FC = () => {
         <SettingItem
           title={t('settings.autoQuitWithoutCore')}
           actions={
-            <Tooltip content={t('settings.autoQuitWithoutCoreTooltip')}>
-              <Button isIconOnly size="sm" variant="light">
+            <Tooltip 
+              content={t('settings.autoQuitWithoutCoreTooltip')}
+              classNames={{
+                content: "backdrop-blur-2xl bg-gray-800/95 border border-white/30 text-white shadow-2xl rounded-xl px-4 py-2"
+              }}
+            >
+              <Button 
+                isIconOnly 
+                size="sm" 
+                variant="light"
+                className="text-gray-400 hover:text-amber-400 transition-colors hover:bg-white/10 rounded-xl"
+              >
                 <IoIosHelpCircle className="text-lg" />
               </Button>
             </Tooltip>
@@ -148,6 +124,11 @@ const GeneralConfig: React.FC = () => {
           <Switch
             size="sm"
             isSelected={autoQuitWithoutCore}
+            classNames={{
+              wrapper: "group-data-[selected=true]:bg-gradient-to-r from-amber-500 to-orange-500 group-data-[selected=false]:bg-white/15 border border-white/20",
+              thumb: "bg-white shadow-xl shadow-amber-500/30",
+              thumbIcon: "text-amber-500"
+            }}
             onValueChange={(v) => {
               patchAppConfig({ autoQuitWithoutCore: v })
             }}
@@ -159,8 +140,12 @@ const GeneralConfig: React.FC = () => {
               size="sm"
               className="w-[100px]"
               type="number"
-              endContent={t('common.seconds')}
+              endContent={<span className="text-gray-400 text-xs">{t('common.seconds')}</span>}
               value={autoQuitWithoutCoreDelay.toString()}
+              classNames={{
+                input: "text-white font-medium",
+                inputWrapper: "backdrop-blur-2xl bg-gradient-to-r from-white/[0.08] to-amber-500/[0.05] border border-white/30 data-[hover=true]:bg-white/[0.12] shadow-lg"
+              }}
               onValueChange={async (v: string) => {
                 let num = parseInt(v)
                 if (isNaN(num)) num = 5
@@ -179,6 +164,7 @@ const GeneralConfig: React.FC = () => {
               isIconOnly
               size="sm"
               variant="light"
+              className="text-gray-400 hover:text-orange-400 transition-colors"
               onPress={() => copyEnv(type)}
             >
               <BiCopy className="text-lg" />
@@ -187,8 +173,7 @@ const GeneralConfig: React.FC = () => {
           divider
         >
           <Select
-            classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
-            className="w-[150px]"
+            className="w-[150px] liquid-glass-select"
             size="sm"
             selectionMode="multiple"
             selectedKeys={new Set(envType)}
@@ -213,6 +198,11 @@ const GeneralConfig: React.FC = () => {
           <Switch
             size="sm"
             isSelected={showFloating}
+            classNames={{
+              wrapper: "group-data-[selected=true]:bg-gradient-to-r from-amber-500 to-orange-500 group-data-[selected=false]:bg-white/15 border border-white/20",
+              thumb: "bg-white shadow-xl shadow-amber-500/30",
+              thumbIcon: "text-amber-500"
+            }}
             onValueChange={async (v) => {
               await patchAppConfig({ showFloatingWindow: v })
               if (v) {
@@ -230,6 +220,11 @@ const GeneralConfig: React.FC = () => {
               <Switch
                 size="sm"
                 isSelected={spinFloatingIcon}
+                classNames={{
+                  wrapper: "group-data-[selected=true]:bg-gradient-to-r from-orange-500 to-orange-600 group-data-[selected=false]:bg-white/20",
+                  thumb: "bg-white shadow-lg",
+                  thumbIcon: "text-orange-500"
+                }}
                 onValueChange={async (v) => {
                   await patchAppConfig({ spinFloatingIcon: v })
                   window.electron.ipcRenderer.send('updateFloatingWindow')
@@ -240,6 +235,11 @@ const GeneralConfig: React.FC = () => {
               <Switch
                 size="sm"
                 isSelected={disableTray}
+                classNames={{
+                  wrapper: "group-data-[selected=true]:bg-gradient-to-r from-orange-500 to-orange-600 group-data-[selected=false]:bg-white/20",
+                  thumb: "bg-white shadow-lg",
+                  thumbIcon: "text-orange-500"
+                }}
                 onValueChange={async (v) => {
                   await patchAppConfig({ disableTray: v })
                   if (v) {
@@ -258,6 +258,11 @@ const GeneralConfig: React.FC = () => {
               <Switch
                 size="sm"
                 isSelected={proxyInTray}
+                classNames={{
+                  wrapper: "group-data-[selected=true]:bg-gradient-to-r from-orange-500 to-orange-600 group-data-[selected=false]:bg-white/20",
+                  thumb: "bg-white shadow-lg",
+                  thumbIcon: "text-orange-500"
+                }}
                 onValueChange={async (v) => {
                   await patchAppConfig({ proxyInTray: v })
                 }}
@@ -272,6 +277,11 @@ const GeneralConfig: React.FC = () => {
               <Switch
                 size="sm"
                 isSelected={showTraffic}
+                classNames={{
+                  wrapper: "group-data-[selected=true]:bg-gradient-to-r from-orange-500 to-orange-600 group-data-[selected=false]:bg-white/20",
+                  thumb: "bg-white shadow-lg",
+                  thumbIcon: "text-orange-500"
+                }}
                 onValueChange={async (v) => {
                   await patchAppConfig({ showTraffic: v })
                   await startMonitor()
@@ -286,6 +296,11 @@ const GeneralConfig: React.FC = () => {
               <Switch
                 size="sm"
                 isSelected={useDockIcon}
+                classNames={{
+                  wrapper: "group-data-[selected=true]:bg-gradient-to-r from-orange-500 to-orange-600 group-data-[selected=false]:bg-white/20",
+                  thumb: "bg-white shadow-lg",
+                  thumbIcon: "text-orange-500"
+                }}
                 onValueChange={async (v) => {
                   await patchAppConfig({ useDockIcon: v })
                 }}
@@ -299,6 +314,11 @@ const GeneralConfig: React.FC = () => {
             size="sm"
             isSelected={useWindowFrame}
             isDisabled={isRelaunching}
+            classNames={{
+              wrapper: "group-data-[selected=true]:bg-gradient-to-r from-amber-500 to-orange-500 group-data-[selected=false]:bg-white/15 border border-white/20",
+              thumb: "bg-white shadow-xl shadow-amber-500/30",
+              thumbIcon: "text-amber-500"
+            }}
             onValueChange={debounce(async (v) => {
               if (isRelaunching) return
               setIsRelaunching(true)
@@ -317,6 +337,7 @@ const GeneralConfig: React.FC = () => {
             size="sm"
             color="primary"
             selectedKey={appTheme}
+            className="liquid-glass-tabs"
             onSelectionChange={(key) => {
               setTheme(key.toString())
               patchAppConfig({ appTheme: key as AppTheme })
@@ -337,6 +358,7 @@ const GeneralConfig: React.FC = () => {
                 isIconOnly
                 title={t('settings.fetchTheme')}
                 variant="light"
+                className="text-gray-400 hover:text-amber-400 transition-colors hover:bg-white/10 rounded-xl"
                 onPress={async () => {
                   setFetching(true)
                   try {
@@ -356,6 +378,7 @@ const GeneralConfig: React.FC = () => {
                 isIconOnly
                 title={t('settings.importTheme')}
                 variant="light"
+                className="text-gray-400 hover:text-amber-400 transition-colors hover:bg-white/10 rounded-xl"
                 onPress={async () => {
                   const files = await getFilePath(['css'])
                   if (!files) return
@@ -374,6 +397,7 @@ const GeneralConfig: React.FC = () => {
                 isIconOnly
                 title={t('settings.editTheme')}
                 variant="light"
+                className="text-gray-400 hover:text-amber-400 transition-colors hover:bg-white/10 rounded-xl"
                 onPress={async () => {
                   setOpenCSSEditor(true)
                 }}
@@ -385,8 +409,7 @@ const GeneralConfig: React.FC = () => {
         >
           {customThemes && (
             <Select
-              classNames={{ trigger: 'data-[hover=true]:bg-default-200' }}
-              className="w-[60%]"
+              className="w-[60%] liquid-glass-select"
               size="sm"
               selectedKeys={new Set([customTheme])}
               aria-label={t('settings.selectTheme')}

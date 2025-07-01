@@ -83,28 +83,27 @@ const Logs: React.FC = () => {
           <Button
             size="sm"
             isIconOnly
-            className="ml-2"
+            className="ml-2 header-button"
             color={trace ? 'primary' : 'default'}
-            variant={trace ? 'solid' : 'bordered'}
+            variant={trace ? 'solid' : 'light'}
             title={t('logs.autoScroll')}
             onPress={() => {
               setTrace((prev) => !prev)
             }}
           >
-            <IoLocationSharp className="text-lg" />
+            <IoLocationSharp className={`text-lg ${trace ? 'text-white' : 'text-white/70'}`} />
           </Button>
           <Button
             size="sm"
             isIconOnly
             title={t('logs.clear')}
-            className="ml-2"
+            className="ml-2 header-button"
             variant="light"
-            color="danger"
             onPress={() => {
               cachedLogs.clean()
             }}
           >
-            <CgTrash className="text-lg" />
+            <CgTrash className="text-lg text-white/70" />
           </Button>
         </div>
         <Divider />

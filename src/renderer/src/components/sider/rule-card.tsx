@@ -5,17 +5,19 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useRules } from '@renderer/hooks/use-rules'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
+import MenuItem from './menu-item'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
 interface Props {
   iconOnly?: boolean
+  menuStyle?: boolean
 }
 
 const RuleCard: React.FC<Props> = (props) => {
   const { t } = useTranslation()
   const { appConfig } = useAppConfig()
-  const { iconOnly } = props
+  const { iconOnly, menuStyle } = props
   const { ruleCardStatus = 'col-span-1' } = appConfig || {}
   const location = useLocation()
   const navigate = useNavigate()
@@ -42,6 +44,7 @@ const RuleCard: React.FC<Props> = (props) => {
             isIconOnly
             color={match ? 'primary' : 'default'}
             variant={match ? 'solid' : 'light'}
+            className={`enterprise-menu-item ${match ? 'active' : ''}`}
             onPress={() => {
               navigate('/rules')
             }}
@@ -52,6 +55,34 @@ const RuleCard: React.FC<Props> = (props) => {
       </div>
     )
   }
+
+  if (menuStyle) {
+    return (
+      <div
+        style={{
+          position: 'relative',
+          transform: CSS.Transform.toString(transform),
+          transition,
+          zIndex: isDragging ? 'calc(infinity)' : undefined
+        }}
+        className="rule-card"
+      >
+        <div
+          ref={setNodeRef}
+          {...attributes}
+          {...listeners}
+        >
+          <MenuItem
+            icon={<MdOutlineAltRoute />}
+            title={t('sider.cards.rules')}
+            path="/rules"
+            count={rules?.rules?.length ?? 0}
+          />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       style={{

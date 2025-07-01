@@ -14,18 +14,20 @@ import ConfigViewer from './config-viewer'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { TiFolder } from 'react-icons/ti'
 import { useTranslation } from 'react-i18next'
+import MenuItem from './menu-item'
 
 dayjs.extend(relativeTime)
 dayjs.locale('zh-cn')
 
 interface Props {
   iconOnly?: boolean
+  menuStyle?: boolean
 }
 
 const ProfileCard: React.FC<Props> = (props) => {
   const { t } = useTranslation()
   const { appConfig, patchAppConfig } = useAppConfig()
-  const { iconOnly } = props
+  const { iconOnly, menuStyle } = props
   const { profileCardStatus = 'col-span-2', profileDisplayDate = 'expire' } = appConfig || {}
   const location = useLocation()
   const navigate = useNavigate()
@@ -64,6 +66,7 @@ const ProfileCard: React.FC<Props> = (props) => {
             isIconOnly
             color={match ? 'primary' : 'default'}
             variant={match ? 'solid' : 'light'}
+            className={`enterprise-menu-item ${match ? 'active' : ''}`}
             onPress={() => {
               navigate('/profiles')
             }}
@@ -71,6 +74,33 @@ const ProfileCard: React.FC<Props> = (props) => {
             <TiFolder className="text-[20px]" />
           </Button>
         </Tooltip>
+      </div>
+    )
+  }
+
+  if (menuStyle) {
+    return (
+      <div
+        style={{
+          position: 'relative',
+          transform: CSS.Transform.toString(transform),
+          transition,
+          zIndex: isDragging ? 'calc(infinity)' : undefined
+        }}
+        className="profile-card"
+      >
+        <div
+          ref={setNodeRef}
+          {...attributes}
+          {...listeners}
+        >
+          <MenuItem
+            icon={<TiFolder />}
+            title={info?.name || t('sider.cards.profiles')}
+            path="/profiles"
+            badge={info.type === 'remote' && extra ? `${calcPercent(extra.upload, extra.download, extra.total)}%` : undefined}
+          />
+        </div>
       </div>
     )
   }

@@ -211,22 +211,26 @@ async function handleDeepLink(url: string): Promise<void> {
 export async function createWindow(): Promise<void> {
   const { useWindowFrame = false } = await getAppConfig()
   const mainWindowState = windowStateKeeper({
-    defaultWidth: 800,
-    defaultHeight: 600,
+    defaultWidth: 1015,
+    defaultHeight: 730,
     file: 'window-state.json'
   })
   // https://github.com/electron/electron/issues/16521#issuecomment-582955104
   Menu.setApplicationMenu(null)
   mainWindow = new BrowserWindow({
-    minWidth: 800,
-    minHeight: 600,
-    width: mainWindowState.width,
-    height: mainWindowState.height,
+    width: 1015,
+    height: 730,
+    minWidth: 1015,
+    minHeight: 730,
+    maxWidth: 1015,
+    maxHeight: 730,
     x: mainWindowState.x,
     y: mainWindowState.y,
     show: false,
     frame: useWindowFrame,
+    resizable: false,
     fullscreenable: false,
+    maximizable: false,
     titleBarStyle: useWindowFrame ? 'default' : 'hidden',
     titleBarOverlay: useWindowFrame
       ? false
@@ -242,7 +246,6 @@ export async function createWindow(): Promise<void> {
       devTools: true
     }
   })
-  mainWindowState.manage(mainWindow)
   mainWindow.on('ready-to-show', async () => {
     const {
       silentStart = false,
@@ -292,10 +295,6 @@ export async function createWindow(): Promise<void> {
         await quitWithoutCore()
       }, autoQuitWithoutCoreDelay * 1000)
     }
-  })
-
-  mainWindow.on('resized', () => {
-    if (mainWindow) mainWindowState.saveState(mainWindow)
   })
 
   mainWindow.on('move', () => {
