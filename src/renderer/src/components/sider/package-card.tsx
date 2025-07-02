@@ -44,12 +44,12 @@ const PackageCard: React.FC<Props> = (props) => {
           {...attributes}
           {...listeners}
         >
-          <MenuItem
+      <MenuItem
             icon={<MdCardMembership />}
-            title="套餐管理"
-            path="/package"
-            isActive={match}
-          />
+        title="套餐管理"
+        path="/package"
+        isActive={match}
+      />
         </div>
       </div>
     )

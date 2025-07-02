@@ -16,7 +16,7 @@ import {
   patchMihomoConfig
 } from '../core/mihomoApi'
 import { mainWindow, showMainWindow, triggerMainWindow } from '..'
-import { app, clipboard, ipcMain, Menu, nativeImage, shell, Tray } from 'electron'
+import { app, ipcMain, Menu, nativeImage, shell, Tray } from 'electron'
 import { dataDir, logDir, mihomoCoreDir, mihomoWorkDir } from '../utils/dirs'
 import { triggerSysProxy } from '../sys/sysproxy'
 import { quitWithoutCore, restartCore } from '../core/manager'
@@ -90,186 +90,6 @@ export const buildContextMenu = async (): Promise<Menu> => {
 
   const contextMenu = [
     {
-      id: 'show',
-      accelerator: showWindowShortcut,
-      label: t('tray.showWindow'),
-      type: 'normal',
-      click: (): void => {
-        showMainWindow()
-      }
-    },
-    {
-      id: 'show-floating',
-      accelerator: showFloatingWindowShortcut,
-      label: floatingWindow?.isVisible() ? t('tray.hideFloatingWindow') : t('tray.showFloatingWindow'),
-      type: 'normal',
-      click: async (): Promise<void> => {
-        await triggerFloatingWindow()
-      }
-    },
-    {
-      id: 'rule',
-      label: t('tray.ruleMode'),
-      accelerator: ruleModeShortcut,
-      type: 'radio',
-      checked: mode === 'rule',
-      click: async (): Promise<void> => {
-        await patchControledMihomoConfig({ mode: 'rule' })
-        await patchMihomoConfig({ mode: 'rule' })
-        mainWindow?.webContents.send('controledMihomoConfigUpdated')
-        mainWindow?.webContents.send('groupsUpdated')
-        ipcMain.emit('updateTrayMenu')
-      }
-    },
-    {
-      id: 'global',
-      label: t('tray.globalMode'),
-      accelerator: globalModeShortcut,
-      type: 'radio',
-      checked: mode === 'global',
-      click: async (): Promise<void> => {
-        await patchControledMihomoConfig({ mode: 'global' })
-        await patchMihomoConfig({ mode: 'global' })
-        mainWindow?.webContents.send('controledMihomoConfigUpdated')
-        mainWindow?.webContents.send('groupsUpdated')
-        ipcMain.emit('updateTrayMenu')
-      }
-    },
-    {
-      id: 'direct',
-      label: t('tray.directMode'),
-      accelerator: directModeShortcut,
-      type: 'radio',
-      checked: mode === 'direct',
-      click: async (): Promise<void> => {
-        await patchControledMihomoConfig({ mode: 'direct' })
-        await patchMihomoConfig({ mode: 'direct' })
-        mainWindow?.webContents.send('controledMihomoConfigUpdated')
-        mainWindow?.webContents.send('groupsUpdated')
-        ipcMain.emit('updateTrayMenu')
-      }
-    },
-    { type: 'separator' },
-    {
-      type: 'checkbox',
-      label: t('tray.systemProxy'),
-      accelerator: triggerSysProxyShortcut,
-      checked: sysProxy.enable,
-      click: async (item): Promise<void> => {
-        const enable = item.checked
-        try {
-          await triggerSysProxy(enable)
-          await patchAppConfig({ sysProxy: { enable } })
-          mainWindow?.webContents.send('appConfigUpdated')
-          floatingWindow?.webContents.send('appConfigUpdated')
-        } catch (e) {
-          // ignore
-        } finally {
-          ipcMain.emit('updateTrayMenu')
-        }
-      }
-    },
-    {
-      type: 'checkbox',
-      label: t('tray.tun'),
-      accelerator: triggerTunShortcut,
-      checked: tun?.enable ?? false,
-      click: async (item): Promise<void> => {
-        const enable = item.checked
-        try {
-          if (enable) {
-            await patchControledMihomoConfig({ tun: { enable }, dns: { enable: true } })
-          } else {
-            await patchControledMihomoConfig({ tun: { enable } })
-          }
-          mainWindow?.webContents.send('controledMihomoConfigUpdated')
-          floatingWindow?.webContents.send('controledMihomoConfigUpdated')
-          await restartCore()
-        } catch {
-          // ignore
-        } finally {
-          ipcMain.emit('updateTrayMenu')
-        }
-      }
-    },
-    ...groupsMenu,
-    { type: 'separator' },
-    {
-      type: 'submenu',
-      label: t('tray.profiles'),
-      submenu: items.map((item) => {
-        return {
-          type: 'radio',
-          label: item.name,
-          checked: item.id === current,
-          click: async (): Promise<void> => {
-            if (item.id === current) return
-            await changeCurrentProfile(item.id)
-            mainWindow?.webContents.send('profileConfigUpdated')
-            ipcMain.emit('updateTrayMenu')
-          }
-        }
-      })
-    },
-    { type: 'separator' },
-    {
-      type: 'submenu',
-      label: t('tray.openDirectories.title'),
-      submenu: [
-        {
-          type: 'normal',
-          label: t('tray.openDirectories.appDir'),
-          click: (): Promise<string> => shell.openPath(dataDir())
-        },
-        {
-          type: 'normal',
-          label: t('tray.openDirectories.workDir'),
-          click: (): Promise<string> => shell.openPath(mihomoWorkDir())
-        },
-        {
-          type: 'normal',
-          label: t('tray.openDirectories.coreDir'),
-          click: (): Promise<string> => shell.openPath(mihomoCoreDir())
-        },
-        {
-          type: 'normal',
-          label: t('tray.openDirectories.logDir'),
-          click: (): Promise<string> => shell.openPath(logDir())
-        }
-      ]
-    },
-    envType.length > 1
-      ? {
-          type: 'submenu',
-          label: t('tray.copyEnv'),
-          submenu: envType.map((type) => {
-            return {
-              id: type,
-              label: type,
-              type: 'normal',
-              click: async (): Promise<void> => {
-                await copyEnv(type)
-              }
-            }
-          })
-        }
-      : {
-          id: 'copyenv',
-          label: t('tray.copyEnv'),
-          type: 'normal',
-          click: async (): Promise<void> => {
-            await copyEnv(envType[0])
-          }
-        },
-    { type: 'separator' },
-    {
-      id: 'quitWithoutCore',
-      label: t('actions.lightMode.button'),
-      type: 'normal',
-      accelerator: quitWithoutCoreShortcut,
-      click: quitWithoutCore
-    },
-    {
       id: 'restart',
       label: t('actions.restartApp'),
       type: 'normal',
@@ -305,7 +125,7 @@ export async function createTray(): Promise<void> {
   if (process.platform === 'win32') {
     tray = new Tray(icoIcon)
   }
-  tray?.setToolTip('Mihomo Party')
+  tray?.setToolTip('一键连')
   tray?.setIgnoreDoubleClickEvents(true)
   if (process.platform === 'darwin') {
     if (!useDockIcon) {

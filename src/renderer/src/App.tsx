@@ -409,18 +409,18 @@ const App: React.FC = () => {
               </div>
               <div className="flex items-center gap-2">
                 {/* <UpdaterButton /> */}
-                <Button
-                  size="sm"
+              <Button
+                size="sm"
                   className="app-nodrag enterprise-menu-item"
-                  isIconOnly
-                  color={location.pathname.includes('/settings') ? 'primary' : 'default'}
-                  variant={location.pathname.includes('/settings') ? 'solid' : 'light'}
-                  onPress={() => {
-                    navigate('/settings')
-                  }}
-                >
+                isIconOnly
+                color={location.pathname.includes('/settings') ? 'primary' : 'default'}
+                variant={location.pathname.includes('/settings') ? 'solid' : 'light'}
+                onPress={() => {
+                  navigate('/settings')
+                }}
+              >
                   <IoSettings className="text-[18px]" />
-                </Button>
+              </Button>
               </div>
             </div>
           </div>
@@ -432,11 +432,11 @@ const App: React.FC = () => {
           <div className="enterprise-sidebar-stats">
             <div className="enterprise-sidebar-stat-item">
               <span className="enterprise-sidebar-stat-label">规则</span>
-              <span className="enterprise-sidebar-stat-value">全局</span>
+              <span className="enterprise-sidebar-stat-value">智能</span>
             </div>
             <div className="enterprise-sidebar-stat-item">
               <span className="enterprise-sidebar-stat-label">直连</span>
-              <span className="enterprise-sidebar-stat-value">yijianlian</span>
+              <span className="enterprise-sidebar-stat-value">一键连</span>
             </div>
             <div className="enterprise-sidebar-stat-item">
               <span className="enterprise-sidebar-stat-label">流量</span>
@@ -461,10 +461,10 @@ const App: React.FC = () => {
                   {order
                     .filter((key: string) => ['accelerator', 'region', 'package', 'profileCenter'].includes(key))
                     .map((key: string) => {
-                      const Component = componentMap[key]
-                      if (!Component) return null
-                      return <Component key={key} menuStyle={true} />
-                    })}
+                    const Component = componentMap[key]
+                    if (!Component) return null
+                    return <Component key={key} menuStyle={true} />
+                  })}
                 </SortableContext>
               </div>
             </DndContext>

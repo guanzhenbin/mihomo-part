@@ -153,7 +153,7 @@ const Settings: React.FC = () => {
             </Card>
           </div>
         </div>
-
+        
         {/* 数据同步 */}
         <div className="enterprise-content-section">
           <h2 className="enterprise-section-title">
@@ -162,7 +162,7 @@ const Settings: React.FC = () => {
           </h2>
           <Card className="enterprise-card">
             <CardBody className="p-6">
-              <WebdavConfig />
+          <WebdavConfig />
             </CardBody>
           </Card>
         </div>
@@ -176,7 +176,7 @@ const Settings: React.FC = () => {
           <div className="space-y-6">
             <Card className="enterprise-card">
               <CardBody className="p-6">
-                <Actions />
+          <Actions />
               </CardBody>
             </Card>
             <Card className="enterprise-card">
@@ -187,7 +187,7 @@ const Settings: React.FC = () => {
                     <h3 className="text-lg font-semibold text-gray-800 mb-2">账户管理</h3>
                     <p className="text-gray-600 text-sm">安全退出当前账户会清除所有本地数据</p>
                   </div>
-                  <LogoutButton />
+            <LogoutButton />
                 </div>
               </CardBody>
             </Card>

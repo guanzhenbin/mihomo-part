@@ -45,12 +45,12 @@ const AcceleratorCard: React.FC<Props> = (props) => {
           {...attributes}
           {...listeners}
         >
-          <MenuItem
+      <MenuItem
             icon={<MdSpeed />}
-            title="游戏加速"
-            path="/accelerator"
-            isActive={match}
-          />
+        title="游戏加速"
+        path="/accelerator"
+        isActive={match}
+      />
         </div>
       </div>
     )

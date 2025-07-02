@@ -44,12 +44,12 @@ const RegionCard: React.FC<Props> = (props) => {
           {...attributes}
           {...listeners}
         >
-          <MenuItem
+      <MenuItem
             icon={<IoEarth />}
-            title="地区选择"
-            path="/region"
-            isActive={match}
-          />
+        title="地区选择"
+        path="/region"
+        isActive={match}
+      />
         </div>
       </div>
     )

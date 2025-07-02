@@ -45,7 +45,7 @@ export async function openUWPTool(): Promise<void> {
 export async function setupFirewall(): Promise<void> {
   const execPromise = promisify(exec)
   const removeCommand = `
-  $rules = @("mihomo", "mihomo-alpha", "Mihomo Party")
+  $rules = @("mihomo", "mihomo-alpha", "一键连")
   foreach ($rule in $rules) {
     if (Get-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue) {
       Remove-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue
@@ -55,17 +55,42 @@ export async function setupFirewall(): Promise<void> {
   const createCommand = `
   New-NetFirewallRule -DisplayName "mihomo" -Direction Inbound -Action Allow -Program "${mihomoCorePath('mihomo')}" -Enabled True -Profile Any -ErrorAction SilentlyContinue
   New-NetFirewallRule -DisplayName "mihomo-alpha" -Direction Inbound -Action Allow -Program "${mihomoCorePath('mihomo-alpha')}" -Enabled True -Profile Any -ErrorAction SilentlyContinue
-  New-NetFirewallRule -DisplayName "Mihomo Party" -Direction Inbound -Action Allow -Program "${exePath()}" -Enabled True -Profile Any -ErrorAction SilentlyContinue
+  New-NetFirewallRule -DisplayName "一键连" -Direction Inbound -Action Allow -Program "${exePath()}" -Enabled True -Profile Any -ErrorAction SilentlyContinue
   `
-
-  if (process.platform === 'win32') {
-    await execPromise(removeCommand, { shell: 'powershell' })
-    await execPromise(createCommand, { shell: 'powershell' })
-  }
 }
 
 export function setNativeTheme(theme: 'system' | 'light' | 'dark'): void {
   nativeTheme.themeSource = theme
+}
+
+export function resetAppConfig(): void {
+  if (process.platform === 'win32') {
+    spawn(
+      'cmd',
+      [
+        '/C',
+        `"timeout /t 2 /nobreak >nul && rmdir /s /q "${dataDir()}" && start "" "${exePath()}"`
+      ],
+      {
+        shell: true,
+        detached: true
+      }
+    ).unref()
+  } else {
+    const script = `while kill -0 ${process.pid} 2>/dev/null; do
+  sleep 0.1
+done
+  rm -rf '${dataDir()}'
+  ${process.argv.join(' ')} & disown
+exit
+`
+    spawn('sh', ['-c', `"${script}"`], {
+      shell: true,
+      detached: true,
+      stdio: 'ignore'
+    })
+  }
+  app.quit()
 }
 
 const elevateTaskXml = `<?xml version="1.0" encoding="UTF-16"?>
@@ -115,34 +140,4 @@ export function createElevateTask(): void {
   execSync(
     `%SystemRoot%\\System32\\schtasks.exe /create /tn "mihomo-party-run" /xml "${taskFilePath}" /f`
   )
-}
-
-export function resetAppConfig(): void {
-  if (process.platform === 'win32') {
-    spawn(
-      'cmd',
-      [
-        '/C',
-        `"timeout /t 2 /nobreak >nul && rmdir /s /q "${dataDir()}" && start "" "${exePath()}""`
-      ],
-      {
-        shell: true,
-        detached: true
-      }
-    ).unref()
-  } else {
-    const script = `while kill -0 ${process.pid} 2>/dev/null; do
-  sleep 0.1
-done
-  rm -rf '${dataDir()}'
-  ${process.argv.join(' ')} & disown
-exit
-`
-    spawn('sh', ['-c', `"${script}"`], {
-      shell: true,
-      detached: true,
-      stdio: 'ignore'
-    })
-  }
-  app.quit()
 }

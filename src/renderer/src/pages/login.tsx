@@ -41,25 +41,25 @@ const FeatureShowcase: FC = (): JSX.Element => {
   
   const features = [
     {
-      title: "高速网络加速",
+      title: "高速游戏加速",
       subtitle: "智能路由优化",
-      description: "采用先进的网络加速技术，自动优化路由路径，显著降低网络延迟，提升连接稳定性。",
+      description: "采用先进的网络加速技术，自动优化路由路径，显著降低游戏延迟，提升连接稳定性。",
       icon: <Zap className="w-8 h-8 text-blue-400" />,
       gradient: "from-blue-500 to-purple-600",
       stats: { value: "99.9%", label: "可用性" }
     },
     {
-      title: "全球节点覆盖", 
-      subtitle: "遍布全球的服务器",
-      description: "拥有分布在50+国家和地区的高速服务器节点，为用户提供就近接入服务。",
+      title: "高速节点网络", 
+      subtitle: "多地优质服务器",
+      description: "拥有分布在多个地区的高速游戏加速节点，为玩家提供就近接入的优质游戏体验。",
       icon: <Globe className="w-8 h-8 text-green-400" />,
       gradient: "from-green-500 to-teal-600",
-      stats: { value: "50+", label: "国家地区" }
+      stats: { value: "多地区", label: "节点覆盖" }
     },
     {
       title: "企业级安全",
       subtitle: "军用级加密保护",
-      description: "采用AES-256加密算法，配合完善的安全审计机制，全方位保护用户数据安全。",
+      description: "采用AES-256加密算法，配合完善的安全审计机制，全方位保护玩家数据安全。",
       icon: <Shield className="w-8 h-8 text-purple-400" />,
       gradient: "from-purple-500 to-pink-600",
       stats: { value: "256位", label: "加密强度" }
@@ -67,7 +67,7 @@ const FeatureShowcase: FC = (): JSX.Element => {
     {
       title: "多设备管理",
       subtitle: "统一账户管理",
-      description: "支持多设备同时在线，配置云端同步，一个账户管理所有设备的网络连接。",
+      description: "支持多设备同时在线，配置云端同步，一个账户管理所有设备的游戏网络连接。",
       icon: <Users className="w-8 h-8 text-orange-400" />,
       gradient: "from-orange-500 to-red-600",
       stats: { value: "10台", label: "设备支持" }
@@ -164,13 +164,13 @@ const LoginForm: FC = (): JSX.Element => {
       }
     };
   }, []);
-
-  const showError = (message: string): void => {
+  
+     const showError = (message: string): void => {
     setError(message)
     setShowToast(true)
   }
 
-  const validatePhone = (phoneToValidate: string): boolean => {
+     const validatePhone = (phoneToValidate: string): boolean => {
     return /^1[3-9]\d{9}$/.test(phoneToValidate);
   };
 
@@ -248,7 +248,7 @@ const LoginForm: FC = (): JSX.Element => {
       <div className="text-center mb-10">
         <div className="enterprise-logo-container mb-8">
           <LogIn className="w-8 h-8 text-blue-600" />
-        </div>
+      </div>
         <h2 className="text-3xl font-bold text-gray-800 mb-2">欢迎回来</h2>
         <p className="text-gray-500">请登录您的账户以继续</p>
       </div>
@@ -258,69 +258,69 @@ const LoginForm: FC = (): JSX.Element => {
           <div className="space-y-5">
             <div>
               <label className="enterprise-label">手机号码</label>
-              <input
-                type="tel"
-                placeholder="请输入手机号码"
-                value={phone}
-                onChange={(e) => {
-                  setPhone(e.target.value)
-                  setError('')
-                  setShowToast(false)
-                }}
+                                <input
+                                  type="tel"
+                                  placeholder="请输入手机号码"
+                                  value={phone}
+                                  onChange={(e) => {
+                                    setPhone(e.target.value)
+                                    setError('')
+                                    setShowToast(false)
+                                  }}
                 className="enterprise-input"
-                required
-              />
-            </div>
+                                  required
+                                />
+                              </div>
             <div>
               <label className="enterprise-label">验证码</label>
               <div className="flex gap-3">
-                <input
-                  type="text"
-                  placeholder="请输入验证码"
-                  value={verificationCode}
-                  onChange={(e) => {
-                    setVerificationCode(e.target.value)
-                    setError('')
-                    setShowToast(false)
-                  }}
+                                  <input
+                                    type="text"
+                                    placeholder="请输入验证码"
+                                    value={verificationCode}
+                                    onChange={(e) => {
+                                      setVerificationCode(e.target.value)
+                                      setError('')
+                                      setShowToast(false)
+                                    }}
                   className="enterprise-input flex-1"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={handleSendCode}
-                  disabled={countdown > 0 || !phone || loading}
+                                    required
+                                  />
+                                <button
+                                  type="button"
+                                  onClick={handleSendCode}
+                                  disabled={countdown > 0 || !phone || loading}
                   className="enterprise-code-button"
-                >
-                  {loading && !codeSent ? (
-                    <div className="flex items-center justify-center">
+                                >
+                                  {loading && !codeSent ? (
+                                    <div className="flex items-center justify-center">
                       <div className="enterprise-spinner-small"></div>
-                    </div>
-                  ) : countdown > 0 ? (
-                    `${countdown}s`
-                  ) : (
+                                    </div>
+                                  ) : countdown > 0 ? (
+                                    `${countdown}s`
+                                  ) : (
                     '发送验证码'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            type="submit"
+                            disabled={loading}
             className="enterprise-login-button"
-          >
-            {loading ? (
-              <div className="flex items-center justify-center gap-2">
+                          >
+                            {loading ? (
+                              <div className="flex items-center justify-center gap-2">
                 <div className="enterprise-spinner"></div>
                 <span>验证中...</span>
-              </div>
-            ) : (
+                              </div>
+                            ) : (
               '登录'
-            )}
-          </button>
-        </form>
-      </div>
+                            )}
+                          </button>
+                        </form>
+                      </div>
       {/* Toast notification */}
       {showToast && error && (
         <Toast 

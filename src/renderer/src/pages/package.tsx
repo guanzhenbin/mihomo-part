@@ -498,7 +498,7 @@ const Package: React.FC = () => {
               </div>
             </CardBody>
           </Card>
-        </div>
+      </div>
 
       {/* 套餐详情弹窗 */}
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} size="2xl" className="backdrop-blur-xl">

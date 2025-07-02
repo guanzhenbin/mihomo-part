@@ -100,19 +100,13 @@ Terminal=false
 Type=Application
 Icon=mihomo-party
 StartupWMClass=mihomo-party
-Comment=Mihomo Party
+Comment=一键连
 Categories=Utility;
 `
 
-    if (existsSync(`/usr/share/applications/${appName}.desktop`)) {
-      desktop = await readFile(`/usr/share/applications/${appName}.desktop`, 'utf8')
+    if (existsSync(path.join(homeDir, '.config', 'autostart', `${appName}.desktop`))) {
+      desktop = await readFile(path.join(homeDir, '.config', 'autostart', `${appName}.desktop`), 'utf8')
     }
-    const autostartDir = path.join(homeDir, '.config', 'autostart')
-    if (!existsSync(autostartDir)) {
-      await mkdir(autostartDir, { recursive: true })
-    }
-    const desktopFilePath = path.join(autostartDir, `${appName}.desktop`)
-    await writeFile(desktopFilePath, desktop)
   }
 }
 
@@ -129,6 +123,8 @@ export async function disableAutoRun(): Promise<void> {
   }
   if (process.platform === 'linux') {
     const desktopFilePath = path.join(homeDir, '.config', 'autostart', `${appName}.desktop`)
-    await rm(desktopFilePath)
+    if (existsSync(desktopFilePath)) {
+      await rm(desktopFilePath)
+    }
   }
 }

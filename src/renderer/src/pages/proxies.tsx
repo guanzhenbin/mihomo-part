@@ -136,7 +136,7 @@ const VpnStatusCard: React.FC = () => {
               代理连接概览
             </h1>
             <p className="text-slate-400 mt-1">实时网络代理监控</p>
-          </div>
+              </div>
           <div className="flex items-center space-x-4">
             <Chip 
               variant="flat" 
@@ -278,16 +278,16 @@ const VpnStatusCard: React.FC = () => {
                     </div>
                     <h3 className="text-xl font-bold text-white">服务器配置</h3>
                   </div>
-                </div>
-
+          </div>
+          
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-300 mb-3">选择代理服务器</label>
-                                         <Select
+                  <Select
                        placeholder="请选择代理服务器"
-                       value={selectedServer}
-                       onChange={(e) => setSelectedServer(e.target.value)}
-                       disabled={isConnected || isConnecting}
+                    value={selectedServer}
+                    onChange={(e) => setSelectedServer(e.target.value)}
+                    disabled={isConnected || isConnecting}
                        className="liquid-glass-select"
                        classNames={{
                          trigger: "bg-white/5 border-white/15 hover:bg-white/10 focus:border-blue-400/50 backdrop-blur-lg",
@@ -295,20 +295,20 @@ const VpnStatusCard: React.FC = () => {
                          listbox: "bg-black/90 backdrop-blur-xl border border-white/10",
                          popoverContent: "bg-black/80 backdrop-blur-xl border border-white/15 rounded-2xl"
                        }}
-                     >
-                      {serverOptions.map((server) => (
-                        <SelectItem key={server.name} value={server.name}>
+                  >
+                    {serverOptions.map((server) => (
+                      <SelectItem key={server.name} value={server.name}>
                           <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center">
+                        <div className="flex items-center">
                               {server.icon && <span className="mr-2">{server.icon}</span>}
                               <span className="font-medium text-white">{server.name}</span>
                             </div>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </Select>
-                  </div>
-
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </Select>
+                </div>
+                
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="accelerator-server-item p-4">
                       <div className="flex items-center justify-between">
@@ -327,7 +327,7 @@ const VpnStatusCard: React.FC = () => {
                           <span className="text-sm text-slate-300">上传总计</span>
                         </div>
                         <span className="text-sm font-medium text-white">{formatTraffic(totalTraffic.upload)}</span>
-                      </div>
+                  </div>
                     </div>
                   </div>
                 </div>
@@ -359,9 +359,9 @@ const VpnStatusCard: React.FC = () => {
                         <div className="text-center">
                           <p className="text-2xl font-bold text-white">{isConnected ? '100' : '0'}%</p>
                           <p className="text-xs text-slate-400">连接率</p>
-                        </div>
-                      </div>
-                    </div>
+                </div>
+              </div>
+            </div>
                     <p className="text-sm text-slate-400">代理连接状态</p>
                   </div>
 

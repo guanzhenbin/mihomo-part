@@ -71,13 +71,13 @@ const RuleCard: React.FC<Props> = (props) => {
           ref={setNodeRef}
           {...attributes}
           {...listeners}
-        >
-          <MenuItem
-            icon={<MdOutlineAltRoute />}
-            title={t('sider.cards.rules')}
-            path="/rules"
-            count={rules?.rules?.length ?? 0}
-          />
+      >
+        <MenuItem
+          icon={<MdOutlineAltRoute />}
+          title={t('sider.cards.rules')}
+          path="/rules"
+          count={rules?.rules?.length ?? 0}
+        />
         </div>
       </div>
     )

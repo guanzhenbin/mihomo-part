@@ -21,7 +21,7 @@ class Request {
   constructor() {
     // 创建 axios 实例
     this.instance = axios.create({
-      baseURL: process.env.NODE_ENV === 'development' ? 'https://kuranode.com/api' : '/api',
+      baseURL: process.env.NODE_ENV === 'development' ? 'https://kuranode.com/api' : 'https://kuranode.com/api',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json'

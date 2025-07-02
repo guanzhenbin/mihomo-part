@@ -64,16 +64,16 @@ const Accelerator: React.FC = () => {
                           proxy.name.includes('🇭🇰') ? '香港' : 
                           proxy.name.includes('🇰🇷') ? '韩国' : '其他'
             if (!selectedRegion || region === selectedRegion) {
-              gameServers.push({
-                name: proxy.name,
-                region,
-                ping: Math.floor(Math.random() * 100) + 10,
-                load: Math.floor(Math.random() * 80) + 10
-              })
-            }
+            gameServers.push({
+              name: proxy.name,
+              region,
+              ping: Math.floor(Math.random() * 100) + 10,
+              load: Math.floor(Math.random() * 80) + 10
+            })
           }
         }
       }
+    }
     }
     return [...new Map(gameServers.map(server => [server.name, server])).values()]
       .sort((a, b) => a.ping - b.ping)
@@ -144,100 +144,100 @@ const Accelerator: React.FC = () => {
 
   return (
     <BasePage title={t('游戏加速') || '游戏加速'} className="accelerator-page-container">
-      <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6">
         {/* 顶部标题区域 */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent mb-2">
-            游戏加速概览
-          </h1>
+                游戏加速概览
+              </h1>
           <p className="text-slate-400">实时网络优化监控</p>
-        </div>
+          </div>
 
-        {/* 统计卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="accelerator-stats-card">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-400 text-sm">连接用户</p>
+          {/* 统计卡片 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="accelerator-stats-card">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-400 text-sm">连接用户</p>
                   <p className="text-2xl font-bold">{stats.totalUsers}</p>
+                  </div>
+                  <div className="p-3 bg-orange-500/20 rounded-lg">
+                    <FaUsers className="text-orange-400 text-xl" />
+                  </div>
                 </div>
-                <div className="p-3 bg-orange-500/20 rounded-lg">
-                  <FaUsers className="text-orange-400 text-xl" />
+                <div className="mt-4 flex items-center">
+                  <MdTrendingUp className="text-green-400 text-sm mr-1" />
+                  <span className="text-green-400 text-sm">+12%</span>
+                  <span className="text-slate-400 text-sm ml-1">较昨日</span>
                 </div>
-              </div>
-              <div className="mt-4 flex items-center">
-                <MdTrendingUp className="text-green-400 text-sm mr-1" />
-                <span className="text-green-400 text-sm">+12%</span>
-                <span className="text-slate-400 text-sm ml-1">较昨日</span>
-              </div>
-            </CardBody>
-          </Card>
+              </CardBody>
+            </Card>
 
-          <Card className="accelerator-stats-card">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-400 text-sm">活跃连接</p>
+            <Card className="accelerator-stats-card">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-400 text-sm">活跃连接</p>
                   <p className="text-2xl font-bold">{stats.activeConnections}</p>
+                  </div>
+                  <div className="p-3 bg-blue-500/20 rounded-lg">
+                    <MdNetworkCheck className="text-blue-400 text-xl" />
+                  </div>
                 </div>
-                <div className="p-3 bg-blue-500/20 rounded-lg">
-                  <MdNetworkCheck className="text-blue-400 text-xl" />
+                <div className="mt-4 flex items-center">
+                  <MdTrendingUp className="text-green-400 text-sm mr-1" />
+                  <span className="text-green-400 text-sm">+8%</span>
+                  <span className="text-slate-400 text-sm ml-1">较昨日</span>
                 </div>
-              </div>
-              <div className="mt-4 flex items-center">
-                <MdTrendingUp className="text-green-400 text-sm mr-1" />
-                <span className="text-green-400 text-sm">+8%</span>
-                <span className="text-slate-400 text-sm ml-1">较昨日</span>
-              </div>
-            </CardBody>
-          </Card>
+              </CardBody>
+            </Card>
 
-          <Card className="accelerator-stats-card">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-400 text-sm">平均延迟</p>
+            <Card className="accelerator-stats-card">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-400 text-sm">平均延迟</p>
                   <p className="text-2xl font-bold">{ping}ms</p>
+                  </div>
+                  <div className="p-3 bg-purple-500/20 rounded-lg">
+                    <FaClock className="text-purple-400 text-xl" />
+                  </div>
                 </div>
-                <div className="p-3 bg-purple-500/20 rounded-lg">
-                  <FaClock className="text-purple-400 text-xl" />
+                <div className="mt-4 flex items-center">
+                  <MdTrendingUp className="text-green-400 text-sm mr-1" />
+                  <span className="text-green-400 text-sm">-15%</span>
+                  <span className="text-slate-400 text-sm ml-1">较昨日</span>
                 </div>
-              </div>
-              <div className="mt-4 flex items-center">
-                <MdTrendingUp className="text-green-400 text-sm mr-1" />
-                <span className="text-green-400 text-sm">-15%</span>
-                <span className="text-slate-400 text-sm ml-1">较昨日</span>
-              </div>
-            </CardBody>
-          </Card>
+              </CardBody>
+            </Card>
 
-          <Card className="accelerator-stats-card">
-            <CardBody className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-400 text-sm">网络优化</p>
+            <Card className="accelerator-stats-card">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-slate-400 text-sm">网络优化</p>
                   <p className="text-2xl font-bold">{stats.networkOptimization}%</p>
+                  </div>
+                  <div className="p-3 bg-green-500/20 rounded-lg">
+                    <FaChartLine className="text-green-400 text-xl" />
+                  </div>
                 </div>
-                <div className="p-3 bg-green-500/20 rounded-lg">
-                  <FaChartLine className="text-green-400 text-xl" />
+                <div className="mt-4">
+                  <Progress 
+                    value={stats.networkOptimization} 
+                    color="success"
+                    size="sm"
+                    className="w-full"
+                    classNames={{
+                      track: "bg-slate-700",
+                      indicator: "bg-gradient-to-r from-green-500 to-emerald-500"
+                    }}
+                  />
                 </div>
-              </div>
-              <div className="mt-4">
-                <Progress 
-                  value={stats.networkOptimization} 
-                  color="success"
-                  size="sm"
-                  className="w-full"
-                  classNames={{
-                    track: "bg-slate-700",
-                    indicator: "bg-gradient-to-r from-green-500 to-emerald-500"
-                  }}
-                />
-              </div>
-            </CardBody>
-          </Card>
-        </div>
+              </CardBody>
+            </Card>
+          </div>
 
         {/* 中央圆形加速按钮区域 */}
         <div className="flex justify-center my-12">
@@ -354,14 +354,14 @@ const Accelerator: React.FC = () => {
         {/* 配置区域 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-16">
           {/* 游戏和服务器选择 */}
-          <Card className="accelerator-main-card">
-            <CardBody className="p-6">
+              <Card className="accelerator-main-card">
+                <CardBody className="p-6">
               <div className="flex items-center space-x-3 mb-6">
-                <div className="p-2 bg-orange-500/20 rounded-lg">
-                  <FaGamepad className="text-orange-400 text-xl" />
-                </div>
+                      <div className="p-2 bg-orange-500/20 rounded-lg">
+                        <FaGamepad className="text-orange-400 text-xl" />
+                      </div>
                 <h3 className="text-xl font-bold">游戏配置</h3>
-              </div>
+                    </div>
 
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2 mb-2">
@@ -386,94 +386,94 @@ const Accelerator: React.FC = () => {
                       {region}
                     </Chip>
                   ))}
-                </div>
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-3">选择游戏</label>
-                  <Select
-                    placeholder="请选择要加速的游戏"
+                    <div>
+                      <label className="block text-sm font-medium text-slate-300 mb-3">选择游戏</label>
+                      <Select
+                        placeholder="请选择要加速的游戏"
                     selectedKeys={selectedGame ? [selectedGame] : []}
                     onSelectionChange={(keys) => {
                       const selected = Array.from(keys)[0] as string
                       setSelectedGame(selected || '')
                     }}
-                    classNames={{
-                      trigger: "bg-slate-700/50 border-slate-600 data-[hover=true]:bg-slate-700/70",
+                        classNames={{
+                          trigger: "bg-slate-700/50 border-slate-600 data-[hover=true]:bg-slate-700/70",
                       value: "text-foreground",
-                      listbox: "bg-slate-800"
-                    }}
-                  >
-                    {gameOptions.map((game) => (
+                          listbox: "bg-slate-800"
+                        }}
+                      >
+                        {gameOptions.map((game) => (
                       <SelectItem key={game.key} textValue={game.label}>
-                        <div className="flex items-center">
-                          <span className="mr-3 text-lg">{game.icon}</span>
-                          <div>
+                              <div className="flex items-center">
+                                <span className="mr-3 text-lg">{game.icon}</span>
+                                <div>
                             <p className="font-semibold">{game.label}</p>
-                            <p className="text-xs text-slate-400">{game.genre} · {game.players} 玩家</p>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </Select>
-                </div>
+                                  <p className="text-xs text-slate-400">{game.genre} · {game.players} 玩家</p>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="block text-sm font-medium text-slate-300">加速节点</label>
-                    <Switch
-                      size="sm"
-                      isSelected={autoOptimize}
-                      onValueChange={handleAutoOptimize}
-                      disabled={isAccelerating}
-                      classNames={{
-                        wrapper: "group-data-[selected=true]:bg-orange-500"
-                      }}
-                    >
-                      <span className="text-xs font-medium text-slate-300">智能优选</span>
-                    </Switch>
-                  </div>
-                  <Select
-                    placeholder="请选择加速服务器"
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <label className="block text-sm font-medium text-slate-300">加速节点</label>
+                        <Switch
+                          size="sm"
+                          isSelected={autoOptimize}
+                          onValueChange={handleAutoOptimize}
+                          disabled={isAccelerating}
+                          classNames={{
+                            wrapper: "group-data-[selected=true]:bg-orange-500"
+                          }}
+                        >
+                          <span className="text-xs font-medium text-slate-300">智能优选</span>
+                        </Switch>
+                      </div>
+                      <Select
+                        placeholder="请选择加速服务器"
                     selectedKeys={selectedServer ? [selectedServer] : []}
                     onSelectionChange={(keys) => {
                       const selected = Array.from(keys)[0] as string
                       setSelectedServer(selected || '')
                     }}
                     isDisabled={autoOptimize}
-                    classNames={{
-                      trigger: "bg-slate-700/50 border-slate-600 data-[hover=true]:bg-slate-700/70",
+                        classNames={{
+                          trigger: "bg-slate-700/50 border-slate-600 data-[hover=true]:bg-slate-700/70",
                       value: "text-foreground",
-                      listbox: "bg-slate-800"
-                    }}
-                  >
-                    {serverOptions.map((server) => (
+                          listbox: "bg-slate-800"
+                        }}
+                      >
+                        {serverOptions.map((server) => (
                       <SelectItem key={server.name} textValue={server.name}>
-                        <div className="flex justify-between items-center w-full">
+                            <div className="flex justify-between items-center w-full">
                           <span className="font-medium">{server.name}</span>
-                          <div className="flex items-center space-x-2">
-                            <Chip size="sm" className="bg-slate-700 text-slate-300">{server.region}</Chip>
-                            <span className={`text-sm font-bold ${
-                              server.ping < 50 ? 'text-green-400' : 
-                              server.ping < 100 ? 'text-yellow-400' : 'text-red-400'
-                            }`}>
-                              {server.ping}ms
-                            </span>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </Select>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+                              <div className="flex items-center space-x-2">
+                                <Chip size="sm" className="bg-slate-700 text-slate-300">{server.region}</Chip>
+                                <span className={`text-sm font-bold ${
+                                  server.ping < 50 ? 'text-green-400' : 
+                                  server.ping < 100 ? 'text-yellow-400' : 'text-red-400'
+                                }`}>
+                                  {server.ping}ms
+                                </span>
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </Select>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
 
-          {/* 实时监控 */}
-          <Card className="accelerator-main-card">
-            <CardBody className="p-6">
+            {/* 实时监控 */}
+              <Card className="accelerator-main-card">
+                <CardBody className="p-6">
               <h3 className="text-xl font-bold mb-6">实时监控</h3>
-              
-              <div className="space-y-4">
+
+                    <div className="space-y-4">
                 <div className="text-center mb-6">
                   <div className="relative w-32 h-32 mx-auto flex items-center justify-center">
                     <svg width="128" height="128" viewBox="0 0 128 128" className="absolute top-0 left-0">
@@ -515,47 +515,47 @@ const Accelerator: React.FC = () => {
                     </div>
                   </div>
                 </div>
-
+                  
                 <div className="space-y-3">
-                  <div className="accelerator-server-item flex items-center justify-between p-3">
-                    <div className="flex items-center space-x-3">
-                      <FaBolt className="text-yellow-400" />
-                      <span className="text-sm text-slate-300">当前延迟</span>
+                    <div className="accelerator-server-item flex items-center justify-between p-3">
+                      <div className="flex items-center space-x-3">
+                        <FaBolt className="text-yellow-400" />
+                        <span className="text-sm text-slate-300">当前延迟</span>
+                      </div>
+                      <span className={`font-bold ${
+                        ping < 50 ? 'text-green-400' : ping < 100 ? 'text-yellow-400' : 'text-red-400'
+                      }`}>
+                        {ping}ms
+                      </span>
                     </div>
-                    <span className={`font-bold ${
-                      ping < 50 ? 'text-green-400' : ping < 100 ? 'text-yellow-400' : 'text-red-400'
-                    }`}>
-                      {ping}ms
-                    </span>
-                  </div>
 
-                  <div className="accelerator-server-item flex items-center justify-between p-3">
-                    <div className="flex items-center space-x-3">
-                      <FaWifi className="text-blue-400" />
-                      <span className="text-sm text-slate-300">丢包率</span>
+                    <div className="accelerator-server-item flex items-center justify-between p-3">
+                      <div className="flex items-center space-x-3">
+                        <FaWifi className="text-blue-400" />
+                        <span className="text-sm text-slate-300">丢包率</span>
+                      </div>
+                      <span className={`font-bold ${loss > 5 ? 'text-red-400' : 'text-green-400'}`}>
+                        {loss.toFixed(1)}%
+                      </span>
                     </div>
-                    <span className={`font-bold ${loss > 5 ? 'text-red-400' : 'text-green-400'}`}>
-                      {loss.toFixed(1)}%
-                    </span>
-                  </div>
 
-                  <div className="accelerator-server-item flex items-center justify-between p-3">
-                    <div className="flex items-center space-x-3">
-                      <FaShield className="text-green-400" />
-                      <span className="text-sm text-slate-300">连接状态</span>
-                    </div>
-                    <Chip 
-                      size="sm" 
-                      color={isAccelerating ? "success" : "default"}
-                      variant="flat"
-                    >
-                      {isAccelerating ? "已加速" : "未加速"}
-                    </Chip>
+                    <div className="accelerator-server-item flex items-center justify-between p-3">
+                      <div className="flex items-center space-x-3">
+                        <FaShield className="text-green-400" />
+                        <span className="text-sm text-slate-300">连接状态</span>
+                      </div>
+                      <Chip 
+                        size="sm" 
+                        color={isAccelerating ? "success" : "default"}
+                        variant="flat"
+                      >
+                        {isAccelerating ? "已加速" : "未加速"}
+                      </Chip>
                   </div>
-                </div>
-              </div>
-            </CardBody>
-          </Card>
+                    </div>
+                  </div>
+                </CardBody>
+              </Card>
         </div>
 
         {/* 服务器状态列表 */}
@@ -608,8 +608,8 @@ const Accelerator: React.FC = () => {
                     >
                       {server.load < 50 ? "优秀" : server.load < 80 ? "良好" : "繁忙"}
                     </Chip>
-                  </div>
-                </div>
+          </div>
+        </div>
               ))}
             </div>
           </CardBody>

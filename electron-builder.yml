@@ -1,5 +1,5 @@
 appId: party.mihomo.app
-productName: Mihomo Party
+productName: 一键连
 directories:
   buildResources: build
 compression: store
@@ -20,7 +20,7 @@ extraResources:
   - from: './extra/'
     to: ''
 protocols:
-  name: 'Mihomo Party URI Scheme'
+  name: '一键连 URI Scheme'
   schemes:
     - 'clash'
     - 'mihomo'
@@ -59,7 +59,7 @@ dmg:
     height: 380
 linux:
   desktop:
-    Name: Mihomo Party
+    Name: 一键连
     MimeType: 'x-scheme-handler/clash;x-scheme-handler/mihomo'
   target:
     - deb

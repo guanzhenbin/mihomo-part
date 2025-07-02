@@ -100,7 +100,7 @@ const ProfileCard: React.FC<Props> = (props) => {
             path="/profiles"
             badge={info.type === 'remote' && extra ? `${calcPercent(extra.upload, extra.download, extra.total)}%` : undefined}
           />
-        </div>
+          </div>
       </div>
     )
   }

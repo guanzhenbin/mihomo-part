@@ -44,12 +44,12 @@ const ProfileCenterCard: React.FC<Props> = (props) => {
           {...attributes}
           {...listeners}
         >
-          <MenuItem
+      <MenuItem
             icon={<MdPerson />}
-            title="个人中心"
-            path="/profile-center"
-            isActive={match}
-          />
+        title="个人中心"
+        path="/profile-center"
+        isActive={match}
+      />
         </div>
       </div>
     )
