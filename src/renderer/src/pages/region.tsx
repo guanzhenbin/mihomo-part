@@ -42,6 +42,8 @@ const Region: React.FC = () => {
   const [autoSwitch, setAutoSwitch] = useState(false)
   const [testingDelay, setTestingDelay] = useState<string[]>([])
   const [showGameServers, setShowGameServers] = useState(true)
+  const [connectingGameServer, setConnectingGameServer] = useState<string | null>(null)
+  const [connectedGameServer, setConnectedGameServer] = useState<string | null>(null)
 
   // 解析代理服务器为地区数据
   const regionServers = useMemo(() => {
@@ -276,10 +278,20 @@ const Region: React.FC = () => {
   // 切换游戏服务器
   const handleSwitchGameServer = async (serverId: string): Promise<void> => {
     try {
+      setConnectingGameServer(serverId)
       console.log(`Switching to game server: ${serverId}`)
-      // 这里可以实现游戏服务器切换逻辑
+      
+      // 模拟连接延迟
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      
+      // 设置连接状态
+      setConnectedGameServer(serverId)
+      setConnectingGameServer(null)
+      
+      // 这里可以实现实际的游戏服务器切换逻辑
     } catch (error) {
       console.error('Failed to switch game server:', error)
+      setConnectingGameServer(null)
     }
   }
 
@@ -427,12 +439,15 @@ const Region: React.FC = () => {
                       {/* 连接按钮 */}
                       <Button
                         size="sm"
-                        color="primary"
+                        color={connectedGameServer === server.id ? "success" : "primary"}
                         variant="flat"
                         className="w-full mt-3"
-                        startContent={<FaRegCirclePlay />}
+                        startContent={connectedGameServer === server.id ? <FaRegCirclePlay /> : <FaRegCirclePlay />}
+                        isLoading={connectingGameServer === server.id}
+                        onPress={() => handleSwitchGameServer(server.id)}
+                        isDisabled={connectingGameServer !== null}
                       >
-                        连接游戏服务器
+                        {connectedGameServer === server.id ? "已连接" : "连接游戏服务器"}
                       </Button>
                     </CardBody>
                   </Card>
