@@ -7,6 +7,9 @@ import TunSwitcher from '@renderer/components/sider/tun-switcher'
 import { Button, Divider } from '@heroui/react'
 import { IoSettings } from 'react-icons/io5'
 import routes from '@renderer/routes'
+import LoginPage from '@renderer/pages/login'
+import LoadingPage from '@renderer/components/loading-page'
+import { useAuth } from '@renderer/hooks/use-auth'
 import {
   DndContext,
   closestCorners,
@@ -47,6 +50,7 @@ export function getDriver(): ReturnType<typeof driver> | null {
 const App: React.FC = () => {
   const { t } = useTranslation()
   const { appConfig, patchAppConfig } = useAppConfig()
+  const { isAuthenticated, isLoading } = useAuth()
   const {
     appTheme = 'system',
     customTheme,
@@ -357,6 +361,16 @@ const App: React.FC = () => {
     resource: ResourceCard,
     override: OverrideCard,
     substore: SubStoreCard
+  }
+
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return <LoadingPage />
+  }
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <LoginPage />
   }
 
   return (

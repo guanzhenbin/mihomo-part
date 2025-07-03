@@ -15,14 +15,20 @@ import { IoIosHelpCircle } from 'react-icons/io'
 import { getDriver } from '@renderer/App'
 import { useTranslation } from 'react-i18next'
 import BaseConfirmModal from '../base/base-confirm-modal'
+import { useAuth } from '@renderer/hooks/use-auth'
+import { useAppConfig } from '@renderer/hooks/use-app-config'
 
 const Actions: React.FC = () => {
   const { t } = useTranslation()
+  const { logout } = useAuth()
+  const { appConfig } = useAppConfig()
   const [newVersion, setNewVersion] = useState('')
   const [changelog, setChangelog] = useState('')
   const [openUpdate, setOpenUpdate] = useState(false)
   const [checkingUpdate, setCheckingUpdate] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  
+  const hasPassword = appConfig?.encryptedPassword && appConfig.encryptedPassword.length > 0
 
   return (
     <>
@@ -51,6 +57,13 @@ const Actions: React.FC = () => {
             {t('actions.guide.button')}
           </Button>
         </SettingItem>
+        {hasPassword && (
+          <SettingItem title="Logout" divider>
+            <Button size="sm" color="danger" variant="light" onPress={() => logout()}>
+              Logout
+            </Button>
+          </SettingItem>
+        )}
         <SettingItem title={t('actions.update.title')} divider>
           <Button
             size="sm"
