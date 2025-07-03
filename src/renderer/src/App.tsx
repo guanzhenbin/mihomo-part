@@ -372,8 +372,8 @@ const App: React.FC = () => {
   }
 
   // 调试当前的侧边栏配置
-  console.log('🎛️ Sidebar debug - order:', order)
-  console.log('🎛️ Sidebar debug - componentMap keys:', Object.keys(componentMap))
+  // console.log('🎛️ Sidebar debug - order:', order)
+  // console.log('🎛️ Sidebar debug - componentMap keys:', Object.keys(componentMap))
 
   // Show loading screen while checking authentication
   if (isLoading) {
