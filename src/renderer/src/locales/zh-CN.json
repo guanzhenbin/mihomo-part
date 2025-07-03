@@ -202,6 +202,7 @@
   "sider.cards.sniff": "域名嗅探",
   "sider.cards.logs": "日志",
   "sider.cards.substore": "Sub-Store",
+  "sider.cards.profilecenter": "个人中心",
   "sider.cards.config": "运行时配置",
   "sider.cards.emptyProfile": "空白配置",
   "sider.cards.viewRuntimeConfig": "查看运行时配置",

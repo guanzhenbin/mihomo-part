@@ -233,10 +233,10 @@ const LoginForm: FC = () => {
 
       {/* Login Type Tabs - Modern Tab Style */}
       <div className="mb-6">
-        <div className="flex relative">
+        <div className="flex relative bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           {/* Tab背景滑块 */}
           <div 
-            className={`absolute top-0 bottom-0 w-1/2 bg-primary/10 rounded-lg transition-transform duration-300 ease-out ${
+            className={`absolute top-1 bottom-1 w-1/2 bg-white dark:bg-gray-700 rounded-md shadow-sm transition-transform duration-300 ease-out ${
               loginType === 'phone' ? 'translate-x-full' : 'translate-x-0'
             }`}
           />
@@ -247,16 +247,13 @@ const LoginForm: FC = () => {
               setLoginType('email');
               setError('');
             }}
-            className={`flex-1 relative z-10 py-2 px-4 text-center text-sm font-medium transition-all duration-300 rounded-lg ${
+            className={`flex-1 relative z-10 py-2 px-4 text-center text-sm font-medium transition-all duration-300 rounded-md ${
               loginType === 'email'
-                ? 'text-primary'
+                ? 'text-gray-900 dark:text-white'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
             Email
-            {loginType === 'email' && (
-              <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full" />
-            )}
           </button>
           
           <button
@@ -265,16 +262,13 @@ const LoginForm: FC = () => {
               setLoginType('phone');
               setError('');
             }}
-            className={`flex-1 relative z-10 py-2 px-4 text-center text-sm font-medium transition-all duration-300 rounded-lg ${
+            className={`flex-1 relative z-10 py-2 px-4 text-center text-sm font-medium transition-all duration-300 rounded-md ${
               loginType === 'phone'
-                ? 'text-primary'
+                ? 'text-gray-900 dark:text-white'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
             Phone
-            {loginType === 'phone' && (
-              <div className="absolute bottom-0.5 left-1/2 transform -translate-x-1/2 w-6 h-0.5 bg-primary rounded-full" />
-            )}
           </button>
         </div>
       </div>
@@ -345,7 +339,7 @@ const LoginForm: FC = () => {
               type="button"
               onClick={sendVerificationCode}
               disabled={isSendingCode || countdown > 0 || !validatePhone(phone)}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1 text-sm text-primary hover:text-primary/80 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500 text-primary dark:text-blue-300 hover:text-primary/80 dark:hover:text-blue-200 disabled:text-gray-400 dark:disabled:text-gray-400 disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:border-gray-100 dark:disabled:border-gray-600 disabled:cursor-not-allowed shadow-sm transition-all duration-200"
             >
               {countdown > 0 ? `${countdown}s` : isSendingCode ? '发送中...' : '获取验证码'}
             </button>

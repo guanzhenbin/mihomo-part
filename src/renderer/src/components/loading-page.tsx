@@ -11,7 +11,7 @@ export default function LoadingPage(): React.JSX.Element {
               <LogIn className="w-6 h-6 text-white dark:text-black" />
             </div>
             {/* Animated ring */}
-            <div className="absolute inset-0 w-12 h-12 border-2 border-transparent border-t-primary rounded-full animate-spin"></div>
+            <div className="absolute inset-0 w-12 h-12 border-2 border-transparent border-t-primary border-r-primary/30 rounded-full animate-spin"></div>
           </div>
           <span className="text-2xl font-bold text-gray-900 dark:text-white">Mihomo Party</span>
         </div>
@@ -26,15 +26,18 @@ export default function LoadingPage(): React.JSX.Element {
         </div>
         
         {/* Loading Text */}
-        <div className="text-gray-600 dark:text-gray-400">
-          <p className="text-lg font-medium mb-2">正在加载应用...</p>
-          <p className="text-sm">请稍候</p>
+        <div className="text-gray-600 dark:text-gray-300">
+          <p className="text-lg font-medium mb-2 text-gray-900 dark:text-white">正在加载应用...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">请稍候</p>
         </div>
         
         {/* Progress Bar */}
         <div className="mt-8 w-64 mx-auto">
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1">
-            <div className="bg-primary h-1 rounded-full animate-pulse" style={{ width: '60%' }}></div>
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+            <div className="bg-gradient-to-r from-primary to-primary/70 h-full rounded-full animate-pulse shadow-sm" style={{ width: '60%' }}></div>
+          </div>
+          <div className="mt-2 text-xs text-gray-400 dark:text-gray-500">
+            初始化中...
           </div>
         </div>
       </div>

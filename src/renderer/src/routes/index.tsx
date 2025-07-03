@@ -13,6 +13,7 @@ import Resources from '@renderer/pages/resources'
 import DNS from '@renderer/pages/dns'
 import Sniffer from '@renderer/pages/sniffer'
 import SubStore from '@renderer/pages/substore'
+import ProfileCenter from '@renderer/pages/profile-center'
 const routes = [
   {
     path: '/mihomo',
@@ -69,6 +70,10 @@ const routes = [
   {
     path: '/substore',
     element: <SubStore />
+  },
+  {
+    path: '/profile-center',
+    element: <ProfileCenter />
   },
   {
     path: '/',

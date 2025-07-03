@@ -35,6 +35,7 @@ import { applyTheme, setNativeTheme, setTitleBarOverlay } from '@renderer/utils/
 import { platform } from '@renderer/utils/init'
 import { TitleBarOverlayOptions } from 'electron'
 import SubStoreCard from '@renderer/components/sider/substore-card'
+import ProfileCenterCard from '@renderer/components/sider/profile-center-card'
 import MihomoIcon from './components/base/mihomo-icon'
 import { driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
@@ -69,7 +70,8 @@ const App: React.FC = () => {
       'dns',
       'sniff',
       'log',
-      'substore'
+      'substore',
+      'profilecenter'
     ]
   } = appConfig || {}
   const narrowWidth = platform === 'darwin' ? 70 : 60
@@ -344,7 +346,9 @@ const App: React.FC = () => {
     rule: 'rules',
     resource: 'resources',
     override: 'override',
-    substore: 'substore'
+    substore: 'substore',
+    profilecenter: 'profile-center',
+    profileCenter: 'profile-center'
   }
 
   const componentMap = {
@@ -360,8 +364,14 @@ const App: React.FC = () => {
     rule: RuleCard,
     resource: ResourceCard,
     override: OverrideCard,
-    substore: SubStoreCard
+    substore: SubStoreCard,
+    profilecenter: ProfileCenterCard,
+    profileCenter: ProfileCenterCard
   }
+
+  // 调试当前的侧边栏配置
+  console.log('🎛️ Sidebar debug - order:', order)
+  console.log('🎛️ Sidebar debug - componentMap keys:', Object.keys(componentMap))
 
   // Show loading screen while checking authentication
   if (isLoading) {
