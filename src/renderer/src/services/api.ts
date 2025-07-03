@@ -19,14 +19,58 @@ interface SendSmsResponse {
 }
 
 interface LoginResponse {
-  token: string
-  user: {
-    id: string
-    email?: string
-    phoneNumber?: string
-    name?: string
+  status: string
+  message: string
+  data: {
+    token: string
+    user?: {
+      id: string
+      email?: string
+      phoneNumber?: string
+      name?: string
+    }
+    expiresIn?: number
   }
-  expiresIn: number
+}
+
+interface UserProfile {
+  status: string
+  data: {
+    id: number
+    email: string
+    uuid: string
+    token: string
+    transfer_enable: number
+    u: number
+    d: number
+    expired_at: number
+    plan_id: number
+    reset_day: number | null
+    subscribe_url: string
+    plan: {
+      id: number
+      group_id: number
+      name: string
+      content: string
+      show: number
+      sort: number
+      renew: number
+      transfer_enable: number
+      speed_limit: number
+      month_price: number
+      quarter_price: number | null
+      half_year_price: number | null
+      year_price: number | null
+      two_year_price: number | null
+      three_year_price: number | null
+      onetime_price: number | null
+      reset_price: number | null
+      reset_traffic_method: number
+      capacity_limit: number | null
+      created_at: number
+      updated_at: number
+    }
+  }
 }
 
 class ApiService {
@@ -44,11 +88,21 @@ class ApiService {
     options: RequestInit = {}
   ): Promise<ApiResponse<T>> {
     try {
+      // 获取保存的token
+      const token = sessionStorage.getItem('mihomo-party-token')
+      
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...options.headers as Record<string, string>
+      }
+      
+      // 如果有token，添加到请求头
+      if (token) {
+        headers.Authorization = token
+      }
+      
       const response = await fetch(`${this.baseURL}${url}`, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers
-        },
+        headers,
         ...options
       })
 
@@ -143,10 +197,17 @@ class ApiService {
       password
     })
   }
+
+  /**
+   * 获取用户信息
+   */
+  async getUserProfile(): Promise<ApiResponse<UserProfile>> {
+    return this.get<UserProfile>('/api/mobile/users/profile')
+  }
 }
 
 // 创建API服务实例
 export const apiService = new ApiService('https://kuranode.com')
 
 // 导出类型
-export type { ApiResponse, SendSmsRequest, SendSmsResponse, LoginResponse }
+export type { ApiResponse, SendSmsRequest, SendSmsResponse, LoginResponse, UserProfile }

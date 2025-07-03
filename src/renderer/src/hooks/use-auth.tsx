@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { useAppConfig } from './use-app-config'
+import { apiService } from '@renderer/services/api'
 
 interface AuthContextType {
   isAuthenticated: boolean
@@ -41,10 +42,37 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
         if (!hasPassword) {
           setIsAuthenticated(true)
         } else {
+          // 检查是否有token
+          const token = sessionStorage.getItem('mihomo-party-token')
           const sessionAuth = sessionStorage.getItem('mihomo-party-auth')
-          if (sessionAuth === 'true') {
-            setIsAuthenticated(true)
+          
+          if (token && sessionAuth === 'true') {
+            console.log('🔐 Found token, verifying with API...')
+            try {
+              // 调用API验证token有效性
+              const profileResult = await apiService.getUserProfile()
+              console.log('🔐 Profile API response:', profileResult)
+              
+              if (profileResult.success) {
+                console.log('🔐 Token is valid, user authenticated')
+                setIsAuthenticated(true)
+              } else {
+                console.log('🔐 Token is invalid, clearing session')
+                sessionStorage.removeItem('mihomo-party-token')
+                sessionStorage.removeItem('mihomo-party-user')
+                sessionStorage.removeItem('mihomo-party-auth')
+                setIsAuthenticated(false)
+              }
+            } catch (error) {
+              console.error('🔐 Profile API error:', error)
+              // API调用失败，清除session
+              sessionStorage.removeItem('mihomo-party-token')
+              sessionStorage.removeItem('mihomo-party-user')
+              sessionStorage.removeItem('mihomo-party-auth')
+              setIsAuthenticated(false)
+            }
           } else {
+            console.log('🔐 No valid token found')
             setIsAuthenticated(false)
           }
         }

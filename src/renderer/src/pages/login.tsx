@@ -81,14 +81,17 @@ const LoginForm: FC = () => {
       // 获取纯数字的手机号
       const phoneNumber = phone.replace(/\D/g, '');
       
+      console.log('📱 Calling sendSmsCode API with phoneNumber:', phoneNumber);
       const result = await apiService.sendSmsCode(phoneNumber);
+      console.log('📱 sendSmsCode API response:', result);
       
       if (!result.success) {
+        console.log('📱 SMS send failed:', result.message);
         setError(result.message || "发送验证码失败，请重试");
         return;
       }
       
-      console.log('Verification code sent successfully:', result.data);
+      console.log('📱 Verification code sent successfully:', result.data);
       
       // 开始60秒倒计时
       setCountdown(60);
@@ -164,14 +167,40 @@ const LoginForm: FC = () => {
         // 获取纯数字的手机号
         const phoneNumber = phone.replace(/\D/g, '');
         
+        console.log('🔐 Calling loginWithSms API with:', { phoneNumber, verificationCode });
         const result = await apiService.loginWithSms(phoneNumber, verificationCode);
+        console.log('🔐 loginWithSms API response:', result);
         
         if (result.success) {
+          console.log('🔐 SMS login successful, user data:', result.data);
+          
+          // 保存token到sessionStorage
+          if (result.data?.data?.token) {
+            sessionStorage.setItem('mihomo-party-token', result.data.data.token);
+            console.log('🔐 Token saved to sessionStorage:', result.data.data.token);
+            
+            // 获取完整用户信息
+            try {
+              console.log('🔐 Fetching user profile...');
+              const profileResult = await apiService.getUserProfile();
+              console.log('🔐 User profile fetched:', profileResult);
+              
+              if (profileResult.success && profileResult.data) {
+                sessionStorage.setItem('mihomo-party-user', JSON.stringify(profileResult.data));
+                console.log('🔐 Complete user profile saved to sessionStorage');
+              }
+            } catch (profileError) {
+              console.error('🔐 Failed to fetch user profile:', profileError);
+              // 即使获取用户信息失败，也不影响登录
+            }
+          }
+          
           const success = await login("dummy-password"); // 手机号登录不需要密码
           if (!success) {
             setError("登录失败，请重试");
           }
         } else {
+          console.log('🔐 SMS login failed:', result.message);
           setError(result.message || "验证码错误，请重试");
         }
       } catch (error) {
