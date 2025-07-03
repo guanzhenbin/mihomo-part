@@ -25,19 +25,23 @@ const OutboundModeSwitcher: React.FC = () => {
   }
   if (!mode) return null
   return (
-    <Tabs
-      fullWidth
-      color="primary"
-      selectedKey={mode}
-      classNames={{
-        tabList: 'bg-content1 shadow-medium outbound-mode-card'
-      }}
-      onSelectionChange={(key: Key) => onChangeMode(key as OutboundMode)}
-    >
-      <Tab className={`${mode === 'rule' ? 'font-bold' : ''}`} key="rule" title={t('sider.cards.outbound.rule')} />
-      <Tab className={`${mode === 'global' ? 'font-bold' : ''}`} key="global" title={t('sider.cards.outbound.global')} />
-      <Tab className={`${mode === 'direct' ? 'font-bold' : ''}`} key="direct" title={t('sider.cards.outbound.direct')} />
-    </Tabs>
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-1">
+      <Tabs
+        fullWidth
+        color="primary"
+        selectedKey={mode}
+        classNames={{
+          tabList: 'bg-transparent gap-1 outbound-mode-card',
+          tab: 'h-9 rounded-lg data-[selected=true]:bg-primary data-[selected=true]:text-white data-[selected=true]:shadow-sm transition-all duration-200',
+          tabContent: 'text-sm font-medium'
+        }}
+        onSelectionChange={(key: Key) => onChangeMode(key as OutboundMode)}
+      >
+        <Tab key="rule" title={t('sider.cards.outbound.rule')} />
+        <Tab key="global" title={t('sider.cards.outbound.global')} />
+        <Tab key="direct" title={t('sider.cards.outbound.direct')} />
+      </Tabs>
+    </div>
   )
 }
 

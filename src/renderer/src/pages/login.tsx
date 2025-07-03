@@ -8,7 +8,7 @@ import { apiService } from "@renderer/services/api";
 type LoginType = 'email' | 'phone';
 
 const LoginForm: FC = () => {
-  const [loginType, setLoginType] = useState<LoginType>('email');
+  const [loginType, setLoginType] = useState<LoginType>('phone');
   const [email, setEmail] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -233,28 +233,13 @@ const LoginForm: FC = () => {
 
       {/* Login Type Tabs - Modern Tab Style */}
       <div className="mb-6">
-        <div className="flex relative bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+        <div className="flex relative bg-gray-100 dark:bg-gray-800 rounded-lg p-1 max-w-full">
           {/* Tab背景滑块 */}
           <div 
-            className={`absolute top-1 bottom-1 w-1/2 bg-white dark:bg-gray-700 rounded-md shadow-sm transition-transform duration-300 ease-out ${
-              loginType === 'phone' ? 'translate-x-full' : 'translate-x-0'
+            className={`absolute top-1 bottom-1 bg-white dark:bg-gray-700 rounded-md shadow-sm transition-all duration-300 ease-out ${
+              loginType === 'email' ? 'left-1/2 right-1' : 'left-1 right-1/2'
             }`}
           />
-          
-          <button
-            type="button"
-            onClick={() => {
-              setLoginType('email');
-              setError('');
-            }}
-            className={`flex-1 relative z-10 py-2 px-4 text-center text-sm font-medium transition-all duration-300 rounded-md ${
-              loginType === 'email'
-                ? 'text-gray-900 dark:text-white'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            Email
-          </button>
           
           <button
             type="button"
@@ -262,13 +247,28 @@ const LoginForm: FC = () => {
               setLoginType('phone');
               setError('');
             }}
-            className={`flex-1 relative z-10 py-2 px-4 text-center text-sm font-medium transition-all duration-300 rounded-md ${
+            className={`flex-1 relative z-10 py-2.5 px-1 text-center text-xs font-medium transition-all duration-300 rounded-md overflow-hidden ${
               loginType === 'phone'
                 ? 'text-gray-900 dark:text-white'
                 : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
             }`}
           >
-            Phone
+            <span className="block truncate whitespace-nowrap">手机</span>
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => {
+              setLoginType('email');
+              setError('');
+            }}
+            className={`flex-1 relative z-10 py-2.5 px-1 text-center text-xs font-medium transition-all duration-300 rounded-md overflow-hidden ${
+              loginType === 'email'
+                ? 'text-gray-900 dark:text-white'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            <span className="block truncate whitespace-nowrap">邮箱</span>
           </button>
         </div>
       </div>
@@ -410,40 +410,45 @@ export default function LoginPage(): React.JSX.Element {
         <div className="relative z-10 text-center text-white px-12">
           <div className="mb-8">
             {/* 3D Illustration Placeholder */}
-            <div className="w-80 h-80 mx-auto mb-8 relative">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-3xl transform rotate-6 opacity-80"></div>
-              <div className="absolute inset-4 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl flex items-center justify-center">
-                <div className="w-32 h-32 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center shadow-2xl">
-                  <LogIn className="w-16 h-16 text-white" />
+            <div className="w-80 h-80 mx-auto mb-8 relative group animate-float">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-3xl transform rotate-6 opacity-80 transition-all duration-700 group-hover:rotate-12 group-hover:scale-105 animate-scale-pulse"></div>
+              <div className="absolute inset-4 bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-95">
+                <div className="w-32 h-32 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center shadow-2xl transition-all duration-700 group-hover:rotate-180 group-hover:scale-110 animate-rotate-slow">
+                  <LogIn className="w-16 h-16 text-white transition-transform duration-700 group-hover:scale-125 animate-pulse" />
                 </div>
               </div>
-              {/* Floating Elements */}
-              <div className="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl transform rotate-12 opacity-80"></div>
-              <div className="absolute -bottom-6 -left-6 w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full opacity-80"></div>
-              <div className="absolute top-1/2 -right-8 w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 transform rotate-45 opacity-80"></div>
+              {/* Floating Elements with Enhanced Animations */}
+              <div className="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl transform rotate-12 opacity-80 animate-float-reverse transition-all duration-1000 hover:scale-110"></div>
+              <div className="absolute -bottom-6 -left-6 w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-full opacity-80 animate-bounce transition-all duration-1000 hover:opacity-100"></div>
+              <div className="absolute top-1/2 -right-8 w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-600 transform rotate-45 opacity-80 animate-ping transition-all duration-1000 hover:rotate-90"></div>
+              
+              {/* Additional Floating Particles */}
+              <div className="absolute top-10 left-10 w-4 h-4 bg-purple-400 rounded-full opacity-60 animate-bounce hover:scale-150 transition-transform"></div>
+              <div className="absolute bottom-10 right-10 w-6 h-6 bg-pink-400 rounded-full opacity-60 animate-float hover:opacity-100 transition-opacity"></div>
+              <div className="absolute top-1/3 left-1/4 w-2 h-2 bg-cyan-400 rounded-full opacity-70 animate-ping hover:scale-200 transition-transform"></div>
             </div>
           </div>
           
-          <h2 className="text-4xl font-bold mb-4">
+          <h2 className="text-4xl font-bold mb-4 transition-all duration-500 hover:scale-105 animate-fade-in-up hover:text-blue-200">
             Manage your Network Anywhere
           </h2>
-          <p className="text-xl text-gray-300 mb-12 max-w-md mx-auto leading-relaxed">
+          <p className="text-xl text-gray-300 mb-12 max-w-md mx-auto leading-relaxed transition-all duration-700 hover:text-white animate-fade-in-up" style={{animationDelay: '0.3s'}}>
             You can manage your proxy connections on the go with Mihomo Party on the web
           </p>
           
-          {/* Pagination Dots */}
-          <div className="flex justify-center space-x-3">
-            <div className="w-3 h-3 rounded-full bg-white"></div>
-            <div className="w-3 h-3 rounded-full bg-white/40"></div>
-            <div className="w-3 h-3 rounded-full bg-white/40"></div>
-          </div>
         </div>
         
-        {/* Additional Decorative Elements */}
-        <div className="absolute top-20 right-20 w-32 h-32 rounded-full bg-gradient-to-br from-purple-500/20 to-transparent blur-xl"></div>
-        <div className="absolute bottom-20 left-20 w-40 h-40 rounded-full bg-gradient-to-br from-blue-500/20 to-transparent blur-xl"></div>
-        <div className="absolute top-1/3 left-10 w-6 h-6 bg-yellow-400/60 transform rotate-45"></div>
-        <div className="absolute bottom-1/3 right-16 w-4 h-4 bg-green-400/60 rounded-full"></div>
+        {/* Enhanced Decorative Elements with Animations */}
+        <div className="absolute top-20 right-20 w-32 h-32 rounded-full bg-gradient-to-br from-purple-500/20 to-transparent blur-xl animate-float opacity-60 hover:opacity-80 transition-opacity"></div>
+        <div className="absolute bottom-20 left-20 w-40 h-40 rounded-full bg-gradient-to-br from-blue-500/20 to-transparent blur-xl animate-float-reverse opacity-60 hover:opacity-80 transition-opacity"></div>
+        <div className="absolute top-1/3 left-10 w-6 h-6 bg-yellow-400/60 transform rotate-45 animate-rotate-slow hover:scale-150 transition-transform"></div>
+        <div className="absolute bottom-1/3 right-16 w-4 h-4 bg-green-400/60 rounded-full animate-ping hover:scale-200 transition-transform"></div>
+        
+        {/* Additional Floating Animation Elements */}
+        <div className="absolute top-10 left-1/4 w-8 h-8 bg-cyan-400/40 rounded-full animate-float hover:bg-cyan-400/70 transition-colors"></div>
+        <div className="absolute bottom-10 right-1/4 w-6 h-6 bg-pink-400/40 transform rotate-45 animate-scale-pulse hover:rotate-90 transition-transform"></div>
+        <div className="absolute top-1/2 left-5 w-3 h-3 bg-orange-400/50 rounded-full animate-ping hover:bg-orange-400/80 transition-colors"></div>
+        <div className="absolute top-3/4 right-5 w-5 h-5 bg-indigo-400/50 transform rotate-12 animate-float-reverse hover:rotate-45 transition-transform"></div>
       </div>
     </div>
   );
