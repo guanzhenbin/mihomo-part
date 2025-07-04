@@ -14,6 +14,7 @@ import DNS from '@renderer/pages/dns'
 import Sniffer from '@renderer/pages/sniffer'
 import SubStore from '@renderer/pages/substore'
 import ProfileCenter from '@renderer/pages/profile-center'
+import Download from '@renderer/pages/download'
 const routes = [
   {
     path: '/mihomo',
@@ -74,6 +75,10 @@ const routes = [
   {
     path: '/profile-center',
     element: <ProfileCenter />
+  },
+  {
+    path: '/download',
+    element: <Download />
   },
   {
     path: '/',

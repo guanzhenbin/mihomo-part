@@ -19,7 +19,8 @@ const titleMap: Record<string, string> = {
   sniffCardStatus: 'sider.cards.sniff',
   logCardStatus: 'sider.cards.logs',
   substoreCardStatus: 'sider.cards.substore',
-  profilecenterCardStatus: 'sider.cards.profilecenter'
+  profilecenterCardStatus: 'sider.cards.profilecenter',
+  downloadCardStatus: 'sider.download.title'
 }
 
 const sizeMap: Record<string, string> = {
@@ -46,7 +47,8 @@ const SiderConfig: FC = () => {
     sniffCardStatus: appConfig?.sniffCardStatus || 'col-span-1',
     logCardStatus: appConfig?.logCardStatus || 'col-span-1',
     substoreCardStatus: appConfig?.substoreCardStatus || 'col-span-1',
-    profilecenterCardStatus: appConfig?.profilecenterCardStatus || 'col-span-1'
+    profilecenterCardStatus: appConfig?.profilecenterCardStatus || 'col-span-1',
+    downloadCardStatus: appConfig?.downloadCardStatus || 'col-span-1'
   }
 
   return (

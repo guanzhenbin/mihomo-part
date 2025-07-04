@@ -106,6 +106,7 @@ export const mihomoGroups = async (): Promise<IMihomoMixedGroup[]> => {
 
 export const mihomoProxyProviders = async (): Promise<IMihomoProxyProviders> => {
   const instance = await getAxios()
+  console.log(instance,'instanceinstanceinstanceinstance')
   return await instance.get('/providers/proxies')
 }
 

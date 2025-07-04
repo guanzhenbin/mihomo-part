@@ -1,4 +1,4 @@
-import { Button, Input, Tab, Tabs } from '@heroui/react'
+import { Button, Input, Tab, Tabs, Switch } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
 import SettingCard from '@renderer/components/base/base-setting-card'
 import SettingItem from '@renderer/components/base/base-setting-item'
@@ -111,6 +111,28 @@ const Sysproxy: React.FC = () => {
     }
   }
 
+  const onToggle = async (enable: boolean): Promise<void> => {
+    const previousState = !enable
+    
+    try {
+      // 立即更新本地状态
+      setValues({ ...values, enable })
+      
+      // 更新配置并触发系统代理
+      await patchAppConfig({ sysProxy: { ...values, enable } })
+      await triggerSysProxy(enable)
+      
+      // 通知其他组件更新
+      window.electron.ipcRenderer.send('updateFloatingWindow')
+      window.electron.ipcRenderer.send('updateTrayMenu')
+    } catch (e) {
+      // 失败时恢复状态
+      setValues({ ...values, enable: previousState })
+      await patchAppConfig({ sysProxy: { enable: previousState } })
+      alert(e)
+    }
+  }
+
   return (
     <BasePage
       title={t('sysproxy.title')}
@@ -133,6 +155,14 @@ const Sysproxy: React.FC = () => {
         />
       )}
       <SettingCard className="sysproxy-settings">
+        <SettingItem title={t('sysproxy.enable.title')} divider>
+          <Switch
+            isSelected={values.enable}
+            onValueChange={onToggle}
+            color="primary"
+            size="sm"
+          />
+        </SettingItem>
         <SettingItem title={t('sysproxy.host.title')} divider>
           <Input
             size="sm"

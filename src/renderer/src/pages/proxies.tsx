@@ -1,4 +1,4 @@
-import { Avatar, Button, Card, CardBody, Chip, Select, SelectItem, Tooltip, Progress } from '@heroui/react'
+import { Avatar, Button, Card, CardBody, Input, Chip, Divider } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import {
@@ -9,66 +9,25 @@ import {
 } from '@renderer/utils/ipc'
 import { CgDetailsLess, CgDetailsMore } from 'react-icons/cg'
 import { TbCircleLetterD } from 'react-icons/tb'
-import { FaLocationCrosshairs, FaServer, FaNetworkWired, FaRegCirclePlay, FaRegCircleStop } from 'react-icons/fa6'
+import { MdOutlineSpeed, MdSearch } from 'react-icons/md'
 import { RxLetterCaseCapitalize } from 'react-icons/rx'
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { GroupedVirtuoso, type GroupedVirtuosoHandle } from 'react-virtuoso'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import ProxyItem from '@renderer/components/proxies/proxy-item'
-import { IoIosArrowBack } from 'react-icons/io'
-import { MdDoubleArrow, MdOutlineSpeed } from 'react-icons/md'
+import { MdDoubleArrow } from 'react-icons/md'
 import { useGroups } from '@renderer/hooks/use-groups'
-import CollapseInput from '@renderer/components/base/collapse-input'
 import { includesIgnoreCase } from '@renderer/utils/includes'
 import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { useTranslation } from 'react-i18next'
 
 
 
-const GROUP_EXPAND_STATE_KEY = 'proxy_group_expand_state'
-
-// 自定义 hook 用于管理展开状态
-const useProxyState = (groups: IMihomoMixedGroup[]): {
-  virtuosoRef: React.RefObject<GroupedVirtuosoHandle>;
-  isOpen: boolean[];
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean[]>>;
-  onScroll: (e: React.UIEvent<HTMLElement>) => void;
-} => {
-  const virtuosoRef = useRef<GroupedVirtuosoHandle>(null)
-  
-  // 初始化展开状态
-  const [isOpen, setIsOpen] = useState<boolean[]>(() => {
-    try {
-      const savedState = localStorage.getItem(GROUP_EXPAND_STATE_KEY)
-      return savedState ? JSON.parse(savedState) : Array(groups.length).fill(false)
-    } catch (error) {
-      console.error('Failed to load group expand state:', error)
-      return Array(groups.length).fill(false)
-    }
-  })
-
-  // 保存展开状态
-  useEffect(() => {
-    try {
-      localStorage.setItem(GROUP_EXPAND_STATE_KEY, JSON.stringify(isOpen))
-    } catch (error) {
-      console.error('Failed to save group expand state:', error)
-    }
-  }, [isOpen])
-  return {
-    virtuosoRef: virtuosoRef as React.RefObject<GroupedVirtuosoHandle>,
-    isOpen,
-    setIsOpen,
-    onScroll: useCallback(() => {
-      // 空实现，不再保存滚动位置
-    }, [])
-  }
-}
 
 const Proxies: React.FC = () => {
   const { t } = useTranslation()
   const { controledMihomoConfig } = useControledMihomoConfig()
   const { mode = 'rule' } = controledMihomoConfig || {}
-  const { groups = [], mutate } = useGroups()
+  const { groups: allGroups = [], mutate } = useGroups()
+  const groups = allGroups.filter(group => group.type === 'Selector' && group.name !== 'GLOBAL')
   const { appConfig, patchAppConfig } = useAppConfig()
   const {
     proxyDisplayMode = 'simple',
@@ -79,43 +38,38 @@ const Proxies: React.FC = () => {
   } = appConfig || {}
   
   const [cols, setCols] = useState(1)
-  const { virtuosoRef, isOpen, setIsOpen, onScroll } = useProxyState(groups)
-  const [delaying, setDelaying] = useState(Array(groups.length).fill(false))
-  const [searchValue, setSearchValue] = useState(Array(groups.length).fill(''))
-  const { groupCounts, allProxies } = useMemo(() => {
-    const groupCounts: number[] = []
-    const allProxies: (IMihomoProxy | IMihomoGroup)[][] = []
-    if (groups.length !== searchValue.length) setSearchValue(Array(groups.length).fill(''))
-    groups.forEach((group, index) => {
-      if (isOpen[index]) {
-        let groupProxies = group.all.filter(
-          (proxy) => proxy && includesIgnoreCase(proxy.name, searchValue[index])
-        )
-        const count = Math.floor(groupProxies.length / cols)
-        groupCounts.push(groupProxies.length % cols === 0 ? count : count + 1)
-        if (proxyDisplayOrder === 'delay') {
-          groupProxies = groupProxies.sort((a, b) => {
-            if (a.history.length === 0) return -1
-            if (b.history.length === 0) return 1
-            if (a.history[a.history.length - 1].delay === 0) return 1
-            if (b.history[b.history.length - 1].delay === 0) return -1
-            return a.history[a.history.length - 1].delay - b.history[b.history.length - 1].delay
-          })
-        }
-        if (proxyDisplayOrder === 'name') {
-          groupProxies = groupProxies.sort((a, b) => a.name.localeCompare(b.name))
-        }
-        allProxies.push(groupProxies)
-      } else {
-        groupCounts.push(0)
-        allProxies.push([])
-      }
-    })
-    return { groupCounts, allProxies }
-  }, [groups, isOpen, proxyDisplayOrder, cols, searchValue])
+  const [delaying, setDelaying] = useState(false)
+  const [searchValue, setSearchValue] = useState('')
+  
+  // 获取第一个代理组（因为现在只显示一个）
+  const group = groups[0]
+  
+  const filteredProxies = useMemo(() => {
+    if (!group || !group.all) return []
+    
+    let proxies = group.all.filter(
+      (proxy) => proxy && includesIgnoreCase(proxy.name, searchValue)
+    )
+    
+    if (proxyDisplayOrder === 'delay') {
+      proxies = proxies.sort((a, b) => {
+        if (a.history.length === 0) return -1
+        if (b.history.length === 0) return 1
+        if (a.history[a.history.length - 1].delay === 0) return 1
+        if (b.history[b.history.length - 1].delay === 0) return -1
+        return a.history[a.history.length - 1].delay - b.history[b.history.length - 1].delay
+      })
+    }
+    
+    if (proxyDisplayOrder === 'name') {
+      proxies = proxies.sort((a, b) => a.name.localeCompare(b.name))
+    }
+    
+    return proxies
+  }, [group, searchValue, proxyDisplayOrder])
 
-  const onChangeProxy = useCallback(async (group: string, proxy: string): Promise<void> => {
-    await mihomoChangeProxy(group, proxy)
+  const onChangeProxy = useCallback(async (groupName: string, proxy: string): Promise<void> => {
+    await mihomoChangeProxy(groupName, proxy)
     if (autoCloseConnection) {
       await mihomoCloseAllConnections()
     }
@@ -126,28 +80,18 @@ const Proxies: React.FC = () => {
     return await mihomoProxyDelay(proxy, url)
   }, [])
 
-  const onGroupDelay = useCallback(async (index: number): Promise<void> => {
-    if (allProxies[index].length === 0) {
-      setIsOpen((prev) => {
-        const newOpen = [...prev]
-        newOpen[index] = true
-        return newOpen
-      })
-    }
-    setDelaying((prev) => {
-      const newDelaying = [...prev]
-      newDelaying[index] = true
-      return newDelaying
-    })
-
+  const onGroupDelay = useCallback(async (): Promise<void> => {
+    if (!group || !filteredProxies.length) return
+    
+    setDelaying(true)
     try {
       // 限制并发数量
       const result: Promise<void>[] = []
       const runningList: Promise<void>[] = []
-      for (const proxy of allProxies[index]) {
+      for (const proxy of filteredProxies) {
         const promise = Promise.resolve().then(async () => {
           try {
-            await mihomoProxyDelay(proxy.name, groups[index].testUrl)
+            await mihomoProxyDelay(proxy.name, group.testUrl)
           } catch {
             // ignore
           } finally {
@@ -165,13 +109,9 @@ const Proxies: React.FC = () => {
       }
       await Promise.all(result)
     } finally {
-      setDelaying((prev) => {
-        const newDelaying = [...prev]
-        newDelaying[index] = false
-        return newDelaying
-      })
+      setDelaying(false)
     }
-  }, [allProxies, groups, delayTestConcurrency, mutate])
+  }, [group, filteredProxies, delayTestConcurrency, mutate])
 
   const calcCols = useCallback((): number => {
     if (proxyCols !== 'auto') {
@@ -197,9 +137,23 @@ const Proxies: React.FC = () => {
     }
   }, [calcCols])
 
+  // 处理图标加载
+  useEffect(() => {
+    if (
+      group?.icon &&
+      group.icon.startsWith('http') &&
+      !localStorage.getItem(group.icon)
+    ) {
+      getImageDataURL(group.icon).then((dataURL) => {
+        localStorage.setItem(group.icon, dataURL)
+        mutate()
+      })
+    }
+  }, [group, mutate])
+
   return (
     <BasePage
-      title={t('proxies.title')}
+      title={group?.name || t('proxies.title')}
       header={
         <>
           <Button
@@ -246,8 +200,6 @@ const Proxies: React.FC = () => {
         </>
       }
     >
-
-      
       {mode === 'direct' ? (
         <div className="h-full w-full flex justify-center items-center">
           <div className="flex flex-col items-center">
@@ -255,200 +207,138 @@ const Proxies: React.FC = () => {
             <h2 className="text-foreground-500 text-[20px]">{t('proxies.mode.direct')}</h2>
           </div>
         </div>
+      ) : !group ? (
+        <div className="h-full w-full flex justify-center items-center">
+          <div className="flex flex-col items-center">
+            <MdDoubleArrow className="text-foreground-500 text-[100px]" />
+            <h2 className="text-foreground-500 text-[20px]">No Selector Group Found</h2>
+          </div>
+        </div>
       ) : (
-        <div className="h-[calc(100vh-50px)]">
-          <GroupedVirtuoso
-            ref={virtuosoRef}
-            groupCounts={groupCounts}
-            onScroll={onScroll}
-            defaultItemHeight={80}
-            increaseViewportBy={{ top: 300, bottom: 300 }}
-            overscan={500}
-            computeItemKey={(index, groupIndex) => {
-              let innerIndex = index
-              groupCounts.slice(0, groupIndex).forEach((count) => {
-                innerIndex -= count
-              })
-              const proxyIndex = innerIndex * cols
-              const proxy = allProxies[groupIndex]?.[proxyIndex]
-              return proxy ? `${groupIndex}-${proxy.name}` : `${groupIndex}-${index}`
-            }}
-            groupContent={(index) => {
-              if (
-                // biome-ignore lint/complexity/useOptionalChain: <explanation>
-                groups[index] &&
-                groups[index].icon &&
-                groups[index].icon.startsWith('http') &&
-                !localStorage.getItem(groups[index].icon)
-              ) {
-                getImageDataURL(groups[index].icon).then((dataURL) => {
-                  localStorage.setItem(groups[index].icon, dataURL)
-                  mutate()
-                })
-              }
-              return groups[index] ? (
-                <div
-                  className={`w-full pt-2 ${index === groupCounts.length - 1 && !isOpen[index] ? 'pb-2' : ''} px-2`}
-                >
-                  <Card
-                    as="div"
-                    isPressable
-                    fullWidth
-                    onPress={() => {
-                      setIsOpen((prev) => {
-                        const newOpen = [...prev]
-                        newOpen[index] = !prev[index]
-                        return newOpen
-                      })
-                    }}
-                  >
-                    <CardBody className="w-full">
-                      <div className="flex justify-between">
-                        <div className="flex text-ellipsis overflow-hidden whitespace-nowrap">
-                          {groups[index].icon ? (
-                            <Avatar
-                              className="bg-transparent mr-2"
-                              size="sm"
-                              radius="sm"
-                              src={
-                                groups[index].icon.startsWith('<svg')
-                                  ? `data:image/svg+xml;utf8,${groups[index].icon}`
-                                  : localStorage.getItem(groups[index].icon) || groups[index].icon
-                              }
-                            />
-                          ) : null}
-                          <div className="text-ellipsis overflow-hidden whitespace-nowrap">
-                            <div
-                              title={groups[index].name}
-                              className="inline flag-emoji h-[32px] text-md leading-[32px]"
-                            >
-                              {groups[index].name}
-                            </div>
-                            {proxyDisplayMode === 'full' && (
-                              <div
-                                title={groups[index].type}
-                                className="inline ml-2 text-sm text-foreground-500"
-                              >
-                                {groups[index].type}
-                              </div>
-                            )}
-                            {proxyDisplayMode === 'full' && (
-                              <div className="inline flag-emoji ml-2 text-sm text-foreground-500">
-                                {groups[index].now}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex">
-                          {proxyDisplayMode === 'full' && (
-                            <Chip size="sm" className="my-1 mr-2">
-                              {groups[index].all.length}
-                            </Chip>
-                          )}
-                          <CollapseInput
-                              title={t('proxies.search.placeholder')}
-                            value={searchValue[index]}
-                            onValueChange={(v) => {
-                              setSearchValue((prev) => {
-                                const newSearchValue = [...prev]
-                                newSearchValue[index] = v
-                                return newSearchValue
-                              })
-                            }}
-                          />
-                          <Button
-                              title={t('proxies.locate')}
-                            variant="light"
-                            size="sm"
-                            isIconOnly
-                            onPress={() => {
-                              if (!isOpen[index]) {
-                                setIsOpen((prev) => {
-                                  const newOpen = [...prev]
-                                  newOpen[index] = true
-                                  return newOpen
-                                })
-                              }
-                              let i = 0
-                              for (let j = 0; j < index; j++) {
-                                i += groupCounts[j]
-                              }
-                              i += Math.floor(
-                                allProxies[index].findIndex(
-                                  (proxy) => proxy.name === groups[index].now
-                                ) / cols
-                              )
-                              virtuosoRef.current?.scrollToIndex({
-                                index: Math.floor(i),
-                                align: 'start'
-                              })
-                            }}
-                          >
-                            <FaLocationCrosshairs className="text-lg text-foreground-500" />
-                          </Button>
-                          <Button
-                              title={t('proxies.delay.test')}
-                            variant="light"
-                            isLoading={delaying[index]}
-                            size="sm"
-                            isIconOnly
-                            onPress={() => {
-                              onGroupDelay(index)
-                            }}
-                          >
-                            <MdOutlineSpeed className="text-lg text-foreground-500" />
-                          </Button>
-                          <IoIosArrowBack
-                            className={`transition duration-200 ml-2 h-[32px] text-lg text-foreground-500 ${isOpen[index] ? '-rotate-90' : ''}`}
-                          />
-                        </div>
-                      </div>
-                    </CardBody>
-                  </Card>
-                </div>
-              ) : (
-                <div>Never See This</div>
-              )
-            }}
-            itemContent={(index, groupIndex) => {
-              let innerIndex = index
-              // biome-ignore lint/complexity/noForEach: <explanation>
-              groupCounts.slice(0, groupIndex).forEach((count) => {
-                innerIndex -= count
-              })
-              return allProxies[groupIndex] ? (
-                <div
-                  style={
-                    proxyCols !== 'auto'
-                      ? { gridTemplateColumns: `repeat(${proxyCols}, minmax(0, 1fr))` }
-                      : {}
-                  }
-                  className={`grid ${proxyCols === 'auto' ? 'sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' : ''} ${groupIndex === groupCounts.length - 1 && innerIndex === groupCounts[groupIndex] - 1 ? 'pb-2' : ''} gap-2 pt-2 mx-2`}
-                >
-                  {Array.from({ length: cols }).map((_, i) => {
-                    if (!allProxies[groupIndex][innerIndex * cols + i]) return null
-                    return (
-                      <ProxyItem
-                        key={allProxies[groupIndex][innerIndex * cols + i].name}
-                        mutateProxies={mutate}
-                        onProxyDelay={onProxyDelay}
-                        onSelect={onChangeProxy}
-                        proxy={allProxies[groupIndex][innerIndex * cols + i]}
-                        group={groups[groupIndex]}
-                        proxyDisplayMode={proxyDisplayMode}
-                        selected={
-                          allProxies[groupIndex][innerIndex * cols + i]?.name ===
-                          groups[groupIndex].now
+        <div className="w-full h-[calc(100vh-50px)] flex flex-col overflow-hidden">
+          {/* 代理组信息卡片 */}
+          <div className="flex-shrink-0 p-4">
+            <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-none shadow-md">
+              <CardBody className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    {group.icon && (
+                      <Avatar
+                        className="bg-transparent border-2 border-white/20 shadow-lg flex-shrink-0"
+                        size="md"
+                        radius="lg"
+                        src={
+                          group.icon.startsWith('<svg')
+                            ? `data:image/svg+xml;utf8,${group.icon}`
+                            : localStorage.getItem(group.icon) || group.icon
                         }
                       />
-                    )
-                  })}
+                    )}
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <h2 className="text-xl font-bold text-foreground-900 mb-1 truncate">{group.name}</h2>
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <Chip size="sm" variant="flat" color="success" className="text-xs">
+                          {group.type}
+                        </Chip>
+                        <Chip size="sm" variant="flat" color="primary" className="text-xs">
+                          {filteredProxies.length} proxies
+                        </Chip>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-foreground-600">
+                        <span>Current:</span>
+                        <Chip size="sm" variant="bordered" color="secondary" className="text-xs font-medium">
+                          {group.now}
+                        </Chip>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Button
+                      size="sm"
+                      variant="flat"
+                      color="primary"
+                      isLoading={delaying}
+                      onPress={onGroupDelay}
+                      startContent={!delaying && <MdOutlineSpeed className="text-lg" />}
+                      className="font-medium"
+                    >
+                      {delaying ? 'Testing...' : 'Speed Test'}
+                    </Button>
+                  </div>
                 </div>
-              ) : (
-                <div>Never See This</div>
-              )
-            }}
-          />
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* 搜索栏和工具栏 */}
+          <div className="flex-shrink-0 px-4 pb-3">
+            <div className="flex gap-3 items-center">
+              <Input
+                placeholder={t('proxies.search.placeholder')}
+                value={searchValue}
+                onValueChange={setSearchValue}
+                startContent={<MdSearch className="text-foreground-400" />}
+                variant="bordered"
+                size="md"
+                className="flex-1"
+                classNames={{
+                  inputWrapper: "border hover:border-primary-300 focus-within:border-primary-500"
+                }}
+              />
+              <div className="flex items-center gap-1 text-sm text-foreground-500 flex-shrink-0">
+                <span>Showing</span>
+                <Chip size="sm" variant="flat" color="default">
+                  {filteredProxies.length}
+                </Chip>
+                <span>of</span>
+                <Chip size="sm" variant="flat" color="default">
+                  {group.all.length}
+                </Chip>
+              </div>
+            </div>
+          </div>
+
+          <Divider className="mx-4 flex-shrink-0" />
+
+          {/* 代理列表 */}
+          <div className="flex-1 overflow-y-auto px-4 pt-3 pb-4">
+            <div
+              className={`grid gap-3 w-full ${
+                proxyCols === 'auto' 
+                  ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
+                  : ''
+              }`}
+              style={
+                proxyCols !== 'auto'
+                  ? { gridTemplateColumns: `repeat(${proxyCols}, minmax(0, 1fr))` }
+                  : {}
+              }
+            >
+              {filteredProxies.map((proxy) => (
+                <div key={proxy.name} className="w-full">
+                  <ProxyItem
+                    mutateProxies={mutate}
+                    onProxyDelay={onProxyDelay}
+                    onSelect={onChangeProxy}
+                    proxy={proxy}
+                    group={group}
+                    proxyDisplayMode={proxyDisplayMode}
+                    selected={proxy.name === group.now}
+                  />
+                </div>
+              ))}
+            </div>
+            
+            {filteredProxies.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-64 text-center">
+                <MdSearch className="text-6xl text-foreground-300 mb-4" />
+                <h3 className="text-lg font-medium text-foreground-500 mb-2">No proxies found</h3>
+                <p className="text-sm text-foreground-400">
+                  Try adjusting your search terms or check your proxy configuration
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </BasePage>

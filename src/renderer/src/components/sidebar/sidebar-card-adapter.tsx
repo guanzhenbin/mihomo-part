@@ -16,7 +16,8 @@ import {
   Network, 
   Search, 
   FileText, 
-  Package 
+  Package,
+  Download
 } from 'lucide-react'
 
 // 图标映射
@@ -33,7 +34,8 @@ const iconMap = {
   dns: <Network className="w-5 h-5" />,
   sniff: <Search className="w-5 h-5" />,
   log: <FileText className="w-5 h-5" />,
-  substore: <Package className="w-5 h-5" />
+  substore: <Package className="w-5 h-5" />,
+  download: <Download className="w-5 h-5" />
 }
 
 // 路径映射
@@ -50,7 +52,8 @@ const pathMap = {
   dns: '/dns',
   sniff: '/sniffer',
   log: '/logs',
-  substore: '/substore'
+  substore: '/substore',
+  download: '/download'
 }
 
 // 标签映射
@@ -67,7 +70,8 @@ const labelMap = {
   dns: 'DNS',
   sniff: '域名嗅探',
   log: '日志',
-  substore: 'Sub-Store'
+  substore: 'Sub-Store',
+  download: '其他平台下载'
 }
 
 interface SidebarCardAdapterProps {
