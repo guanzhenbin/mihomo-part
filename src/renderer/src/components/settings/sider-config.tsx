@@ -20,7 +20,8 @@ const titleMap: Record<string, string> = {
   logCardStatus: 'sider.cards.logs',
   substoreCardStatus: 'sider.cards.substore',
   profilecenterCardStatus: 'sider.cards.profilecenter',
-  downloadCardStatus: 'sider.download.title'
+  downloadCardStatus: 'sider.download.title',
+  packagePurchaseCardStatus: '购买套餐'
 }
 
 const sizeMap: Record<string, string> = {
@@ -48,7 +49,8 @@ const SiderConfig: FC = () => {
     logCardStatus: appConfig?.logCardStatus || 'col-span-1',
     substoreCardStatus: appConfig?.substoreCardStatus || 'col-span-1',
     profilecenterCardStatus: appConfig?.profilecenterCardStatus || 'col-span-1',
-    downloadCardStatus: appConfig?.downloadCardStatus || 'col-span-1'
+    downloadCardStatus: appConfig?.downloadCardStatus || 'col-span-1',
+    packagePurchaseCardStatus: appConfig?.packagePurchaseCardStatus || 'col-span-1'
   }
 
   return (

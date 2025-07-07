@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import { Card, CardBody, Chip, Progress, Button, Avatar } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
 import { UserProfile } from '@renderer/services/api'
-import { User, Mail, Calendar, Package, Download, Upload, Clock, Shield, Copy, ExternalLink, Crown, Zap, TrendingUp, Server, Activity, Wifi, Star, Globe, Sparkles, CircuitBoard, Layers } from 'lucide-react'
+import { useAuth } from '@renderer/hooks/use-auth'
+import { User, Mail, Calendar, Package, Download, Upload, Clock, Shield, Copy, ExternalLink, Crown, Zap, TrendingUp, Server, Activity, Wifi, Star, Globe, Sparkles, CircuitBoard, Layers, LogOut } from 'lucide-react'
 
 const ProfileCenterPage: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const { logout } = useAuth()
 
   useEffect(() => {
     const loadUserProfile = () => {
@@ -53,6 +55,18 @@ const ProfileCenterPage: React.FC = () => {
     } catch (error) {
       console.error('复制失败:', error)
     }
+  }
+
+  const handleLogout = () => {
+    // 清除sessionStorage中的登录信息
+    sessionStorage.removeItem('mihomo-party-token')
+    sessionStorage.removeItem('mihomo-party-user')
+    sessionStorage.removeItem('mihomo-party-auth')
+    
+    // 调用logout函数更新认证状态
+    logout()
+    
+    console.log('🔐 User logged out successfully')
   }
 
   if (isLoading) {
@@ -122,9 +136,22 @@ const ProfileCenterPage: React.FC = () => {
             </div>
             
             <div className="space-y-4">
-              <h1 className="text-6xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-800 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent leading-tight animate-fade-in-up">
-                个人中心
-              </h1>
+              <div className="flex items-center justify-center gap-6">
+                <h1 className="text-6xl font-bold bg-gradient-to-r from-slate-900 via-blue-800 to-indigo-800 dark:from-white dark:via-blue-200 dark:to-indigo-200 bg-clip-text text-transparent leading-tight animate-fade-in-up">
+                  个人中心
+                </h1>
+                <Button
+                  size="lg"
+                  variant="flat"
+                  color="danger"
+                  startContent={<LogOut className="w-5 h-5" />}
+                  onClick={handleLogout}
+                  className="font-semibold px-6 py-3 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border border-red-200 dark:border-red-700 hover:shadow-lg transition-all duration-300 animate-fade-in-up"
+                  style={{animationDelay: '0.1s'}}
+                >
+                  退出登录
+                </Button>
+              </div>
               <div className="flex items-center justify-center gap-2 animate-fade-in-up" style={{animationDelay: '0.2s'}}>
                 <Sparkles className="w-5 h-5 text-blue-500" />
                 <p className="text-xl text-slate-600 dark:text-slate-400 font-medium">

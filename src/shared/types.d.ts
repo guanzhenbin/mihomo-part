@@ -245,6 +245,7 @@ interface IAppConfig {
   substoreCardStatus?: CardStatus
   profilecenterCardStatus?: CardStatus
   downloadCardStatus?: CardStatus
+  packagePurchaseCardStatus?: CardStatus
   sysproxyCardStatus?: CardStatus
   tunCardStatus?: CardStatus
   githubToken?: string

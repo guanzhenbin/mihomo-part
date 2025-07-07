@@ -15,6 +15,7 @@ import Sniffer from '@renderer/pages/sniffer'
 import SubStore from '@renderer/pages/substore'
 import ProfileCenter from '@renderer/pages/profile-center'
 import Download from '@renderer/pages/download'
+import PackagePurchase from '@renderer/pages/package-purchase'
 const routes = [
   {
     path: '/mihomo',
@@ -79,6 +80,10 @@ const routes = [
   {
     path: '/download',
     element: <Download />
+  },
+  {
+    path: '/package-purchase',
+    element: <PackagePurchase />
   },
   {
     path: '/',

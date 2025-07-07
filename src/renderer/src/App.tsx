@@ -40,6 +40,7 @@ import { TitleBarOverlayOptions } from 'electron'
 import SubStoreCard from '@renderer/components/sider/substore-card'
 import ProfileCenterCard from '@renderer/components/sider/profile-center-card'
 import DownloadCard from '@renderer/components/sider/download-card'
+import PackagePurchaseCard from '@renderer/components/sider/package-purchase-card'
 import SidebarSection from '@renderer/components/sidebar/sidebar-section'
 import SidebarCardAdapter from '@renderer/components/sidebar/sidebar-card-adapter'
 import MihomoIcon from './components/base/mihomo-icon'
@@ -79,7 +80,8 @@ const App: React.FC = () => {
       'sniff',
       'log',
       'substore',
-      'profilecenter'
+      'profilecenter',
+      'packagepurchase'
     ]
   } = appConfig || {}
   const narrowWidth = platform === 'darwin' ? 70 : 60
@@ -116,10 +118,15 @@ const App: React.FC = () => {
   }
 
   useEffect(() => {
-    // 确保 download 在 siderOrder 中，但移除 proxy
+    // 确保 download 和 packagepurchase 在 siderOrder 中，但移除 proxy
     let updatedOrder = siderOrder.includes('download') 
       ? siderOrder 
       : [...siderOrder.slice(0, 6), 'download', ...siderOrder.slice(6)]
+    
+    // 确保 packagepurchase 在 siderOrder 中
+    if (!updatedOrder.includes('packagepurchase')) {
+      updatedOrder = [...updatedOrder, 'packagepurchase']
+    }
     
     // 移除 proxy 如果它存在
     updatedOrder = updatedOrder.filter(item => item !== 'proxy')
@@ -128,7 +135,7 @@ const App: React.FC = () => {
     setSiderWidthValue(siderWidth)
     
     // 如果需要更新配置
-    if (!siderOrder.includes('download') || siderOrder.includes('proxy')) {
+    if (!siderOrder.includes('download') || !siderOrder.includes('packagepurchase') || siderOrder.includes('proxy')) {
       patchAppConfig({ siderOrder: updatedOrder })
     }
   }, [siderOrder, siderWidth, patchAppConfig])
@@ -378,7 +385,8 @@ const App: React.FC = () => {
     substore: 'substore',
     profilecenter: 'profile-center',
     profileCenter: 'profile-center',
-    download: 'download'
+    download: 'download',
+    packagepurchase: 'package-purchase'
   }
 
   const componentMap = {
@@ -396,7 +404,8 @@ const App: React.FC = () => {
     substore: SubStoreCard,
     profilecenter: ProfileCenterCard,
     profileCenter: ProfileCenterCard,
-    download: DownloadCard
+    download: DownloadCard,
+    packagepurchase: PackagePurchaseCard
   }
 
   // 调试当前的侧边栏配置
@@ -531,6 +540,11 @@ const App: React.FC = () => {
                       return <DownloadCard key={key} iconOnly={false} />
                     }
                     
+                    // 特殊处理购买套餐卡片
+                    if (key === 'packagepurchase') {
+                      return <PackagePurchaseCard key={key} iconOnly={false} />
+                    }
+                    
                     // 使用适配器渲染其他卡片
                     return <SidebarCardAdapter key={key} cardKey={key} iconOnly={false} />
                   })}
@@ -554,6 +568,11 @@ const App: React.FC = () => {
                     // 特殊处理下载卡片
                     if (key === 'download') {
                       return <DownloadCard key={key} iconOnly={false} />
+                    }
+                    
+                    // 特殊处理购买套餐卡片
+                    if (key === 'packagepurchase') {
+                      return <PackagePurchaseCard key={key} iconOnly={false} />
                     }
                     
                     // 使用适配器渲染其他卡片
