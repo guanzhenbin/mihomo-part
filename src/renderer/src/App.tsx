@@ -69,7 +69,6 @@ const App: React.FC = () => {
       'sysproxy',
       'tun',
       'profile',
-      'proxy',
       'rule',
       'resource',
       'override',
@@ -117,17 +116,19 @@ const App: React.FC = () => {
   }
 
   useEffect(() => {
-    // 确保 download 在 siderOrder 中
-    const updatedOrder = siderOrder.includes('download') 
+    // 确保 download 在 siderOrder 中，但移除 proxy
+    let updatedOrder = siderOrder.includes('download') 
       ? siderOrder 
-      : [...siderOrder.slice(0, 7), 'download', ...siderOrder.slice(7)]
+      : [...siderOrder.slice(0, 6), 'download', ...siderOrder.slice(6)]
     
-    // console.log('🎛️ Updated order with download:', updatedOrder)
+    // 移除 proxy 如果它存在
+    updatedOrder = updatedOrder.filter(item => item !== 'proxy')
+    
     setOrder(updatedOrder)
     setSiderWidthValue(siderWidth)
     
     // 如果需要更新配置
-    if (!siderOrder.includes('download')) {
+    if (!siderOrder.includes('download') || siderOrder.includes('proxy')) {
       patchAppConfig({ siderOrder: updatedOrder })
     }
   }, [siderOrder, siderWidth, patchAppConfig])
@@ -366,7 +367,6 @@ const App: React.FC = () => {
     sysproxy: 'sysproxy',
     tun: 'tun',
     profile: 'profiles',
-    proxy: 'proxies',
     mihomo: 'mihomo',
     connection: 'connections',
     dns: 'dns',
@@ -385,7 +385,6 @@ const App: React.FC = () => {
     sysproxy: SysproxySwitcher,
     tun: TunSwitcher,
     profile: ProfileCard,
-    proxy: ProxyCard,
     mihomo: MihomoCoreCard,
     connection: ConnCard,
     dns: DNSCard,

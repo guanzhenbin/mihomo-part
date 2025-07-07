@@ -272,6 +272,8 @@
   "sniffer.skipSrcAddress.placeholder": "Example: 192.168.1.1/24",
   "sysproxy.title": "System Proxy",
   "sysproxy.enable.title": "Enable System Proxy",
+  "sysproxy.status.connected": "Connected - System proxy is enabled",
+  "sysproxy.status.disconnected": "Disconnected - System proxy is disabled",
   "sysproxy.host.title": "Proxy Host",
   "sysproxy.host.placeholder": "Default 127.0.0.1, do not modify unless necessary",
   "sysproxy.mode.title": "Proxy Mode",

@@ -272,6 +272,8 @@
   "sniffer.skipSrcAddress.placeholder": "例：192.168.1.1/24",
   "sysproxy.title": "系统代理",
   "sysproxy.enable.title": "启用系统代理",
+  "sysproxy.status.connected": "已连接 - 系统代理已启用",
+  "sysproxy.status.disconnected": "未连接 - 系统代理已禁用",
   "sysproxy.host.title": "代理主机",
   "sysproxy.host.placeholder": "默认 127.0.0.1 若无特殊需求请勿修改",
   "sysproxy.mode.title": "代理模式",
