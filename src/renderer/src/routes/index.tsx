@@ -16,6 +16,7 @@ import SubStore from '@renderer/pages/substore'
 import ProfileCenter from '@renderer/pages/profile-center'
 import Download from '@renderer/pages/download'
 import PackagePurchase from '@renderer/pages/package-purchase'
+import OrderCenter from '@renderer/pages/order-center'
 const routes = [
   {
     path: '/mihomo',
@@ -84,6 +85,10 @@ const routes = [
   {
     path: '/package-purchase',
     element: <PackagePurchase />
+  },
+  {
+    path: '/order-center',
+    element: <OrderCenter />
   },
   {
     path: '/',

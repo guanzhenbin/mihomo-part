@@ -1,10 +1,12 @@
 import { useState } from 'react'
 import { Card, CardBody, Button, Chip } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
-import { Crown, Zap, Star, Check, Package, Wifi, Globe, Shield, Clock, TrendingUp } from 'lucide-react'
+import { Zap, Check, Package, Wifi, Globe, Shield, Clock, TrendingUp } from 'lucide-react'
+import { apiService, type PlanItem } from '@renderer/services/api'
+import useSWR from 'swr'
 
 interface PricingPlan {
-  id: string
+  id: number
   name: string
   price: number
   originalPrice?: number
@@ -19,80 +21,94 @@ interface PricingPlan {
 }
 
 const PackagePurchasePage: React.FC = () => {
-  const [selectedPlan, setSelectedPlan] = useState<string>('')
+  const [selectedPlan, setSelectedPlan] = useState<number | null>(null)
 
-  const plans: PricingPlan[] = [
-    {
-      id: 'basic',
-      name: '基础套餐',
-      price: 9.9,
-      period: '月',
-      popular: false,
-      features: [
-        '100GB 月流量',
-        '不限设备数量',
-        '主流节点覆盖',
-        '7x24 技术支持',
-        '解锁主流媒体'
-      ],
-      bandwidth: '100 Mbps',
-      traffic: '100 GB',
-      devices: '不限',
-      support: '邮件支持',
-      color: 'primary'
+  // 使用SWR获取套餐数据，避免重复请求
+  const { data: plansData, isLoading } = useSWR(
+    'plans',
+    async () => {
+      const response = await apiService.getPlans()
+      if (response.success && response.data?.data) {
+        return response.data.data.map((plan: PlanItem, index: number) => {
+          const htmlContent = plan.content
+          const features = extractFeaturesFromHtml(htmlContent)
+          
+          // 确定价格和周期
+          let price = 0
+          let period = '月'
+          
+          if (plan.month_price) {
+            price = plan.month_price / 100
+            period = '月'
+          } else if (plan.quarter_price) {
+            price = plan.quarter_price / 100
+            period = '季'
+          } else if (plan.half_year_price) {
+            price = plan.half_year_price / 100
+            period = '半年'
+          } else if (plan.year_price) {
+            price = plan.year_price / 100
+            period = '年'
+          } else if (plan.two_year_price) {
+            price = plan.two_year_price / 100
+            period = '两年'
+          } else if (plan.three_year_price) {
+            price = plan.three_year_price / 100
+            period = '三年'
+          } else if (plan.onetime_price) {
+            price = plan.onetime_price / 100
+            period = '一次性'
+          }
+          
+          return {
+            id: plan.id,
+            name: plan.name,
+            price,
+            period,
+            popular: false,
+            features,
+            bandwidth: `${plan.speed_limit} Mbps`,
+            traffic: `${plan.transfer_enable} GB`,
+            devices: '不限',
+            support: '技术支持',
+            color: index === 0 ? 'primary' : index === 1 ? 'success' : 'warning'
+          } as PricingPlan
+        })
+      }
+      throw new Error('API调用失败')
     },
     {
-      id: 'standard',
-      name: '标准套餐',
-      price: 19.9,
-      originalPrice: 29.9,
-      period: '月',
-      popular: true,
-      features: [
-        '300GB 月流量',
-        '不限设备数量',
-        '全球节点覆盖',
-        '7x24 技术支持',
-        '解锁全球媒体',
-        '专线加速',
-        '游戏加速优化'
-      ],
-      bandwidth: '500 Mbps',
-      traffic: '300 GB',
-      devices: '不限',
-      support: 'VIP 支持',
-      color: 'success'
-    },
-    {
-      id: 'premium',
-      name: '高级套餐',
-      price: 39.9,
-      originalPrice: 59.9,
-      period: '月',
-      popular: false,
-      features: [
-        '1TB 月流量',
-        '不限设备数量',
-        '全球优质节点',
-        '7x24 专属支持',
-        '解锁全球媒体',
-        '专线加速',
-        '游戏加速优化',
-        '企业级安全',
-        '定制化服务'
-      ],
-      bandwidth: '1 Gbps',
-      traffic: '1 TB',
-      devices: '不限',
-      support: '专属客服',
-      color: 'warning'
+      fallbackData: []
     }
-  ]
+  )
 
-  const handlePurchase = (planId: string) => {
+  const plans = plansData || []
+  const loading = isLoading
+
+  const extractFeaturesFromHtml = (html: string): string[] => {
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, 'text/html')
+    const listItems = doc.querySelectorAll('li')
+    return Array.from(listItems).map(li => li.textContent || '').filter(text => text.length > 0)
+  }
+
+  const handlePurchase = (planId: number) => {
     setSelectedPlan(planId)
     // 这里可以添加购买逻辑
     console.log('购买套餐:', planId)
+  }
+
+  if (loading) {
+    return (
+      <BasePage title="">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-lg text-slate-600 dark:text-slate-400">加载套餐信息中...</p>
+          </div>
+        </div>
+      </BasePage>
+    )
   }
 
   return (
@@ -115,7 +131,7 @@ const PackagePurchasePage: React.FC = () => {
           <div className="text-center mb-16">
             <div className="flex justify-center mb-8">
               <div className="w-20 h-20 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-2xl animate-float">
-                <Crown className="w-10 h-10 text-white" />
+                <Package className="w-10 h-10 text-white" />
               </div>
             </div>
             
@@ -132,22 +148,8 @@ const PackagePurchasePage: React.FC = () => {
             {plans.map((plan) => (
               <Card
                 key={plan.id}
-                className={`relative bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:-translate-y-4 group ${
-                  plan.popular ? 'scale-105 ring-2 ring-primary ring-offset-4 ring-offset-background' : ''
-                }`}
+                className="relative bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border-0 shadow-2xl hover:shadow-3xl transition-all duration-500 hover:-translate-y-4 group"
               >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                    <Chip
-                      color="primary"
-                      variant="shadow"
-                      className="text-white font-bold px-4 py-1"
-                      startContent={<Star className="w-4 h-4" />}
-                    >
-                      最受欢迎
-                    </Chip>
-                  </div>
-                )}
                 
                 <CardBody className="p-8 relative overflow-hidden">
                   <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
@@ -259,7 +261,7 @@ const PackagePurchasePage: React.FC = () => {
                       color={plan.color}
                       size="lg"
                       className="w-full font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-300"
-                      startContent={plan.popular ? <Crown className="w-5 h-5" /> : <Zap className="w-5 h-5" />}
+                      startContent={<Zap className="w-5 h-5" />}
                       onPress={() => handlePurchase(plan.id)}
                       disabled={selectedPlan === plan.id}
                     >

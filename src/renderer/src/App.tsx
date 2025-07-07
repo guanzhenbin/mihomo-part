@@ -41,6 +41,7 @@ import SubStoreCard from '@renderer/components/sider/substore-card'
 import ProfileCenterCard from '@renderer/components/sider/profile-center-card'
 import DownloadCard from '@renderer/components/sider/download-card'
 import PackagePurchaseCard from '@renderer/components/sider/package-purchase-card'
+import OrderCenterCard from '@renderer/components/sider/order-center-card'
 import SidebarSection from '@renderer/components/sidebar/sidebar-section'
 import SidebarCardAdapter from '@renderer/components/sidebar/sidebar-card-adapter'
 import MihomoIcon from './components/base/mihomo-icon'
@@ -81,7 +82,8 @@ const App: React.FC = () => {
       'log',
       'substore',
       'profilecenter',
-      'packagepurchase'
+      'packagepurchase',
+      'ordercenter'
     ]
   } = appConfig || {}
   const narrowWidth = platform === 'darwin' ? 70 : 60
@@ -128,6 +130,11 @@ const App: React.FC = () => {
       updatedOrder = [...updatedOrder, 'packagepurchase']
     }
     
+    // 确保 ordercenter 在 siderOrder 中
+    if (!updatedOrder.includes('ordercenter')) {
+      updatedOrder = [...updatedOrder, 'ordercenter']
+    }
+    
     // 移除 proxy 如果它存在
     updatedOrder = updatedOrder.filter(item => item !== 'proxy')
     
@@ -135,7 +142,7 @@ const App: React.FC = () => {
     setSiderWidthValue(siderWidth)
     
     // 如果需要更新配置
-    if (!siderOrder.includes('download') || !siderOrder.includes('packagepurchase') || siderOrder.includes('proxy')) {
+    if (!siderOrder.includes('download') || !siderOrder.includes('packagepurchase') || !siderOrder.includes('ordercenter') || siderOrder.includes('proxy')) {
       patchAppConfig({ siderOrder: updatedOrder })
     }
   }, [siderOrder, siderWidth, patchAppConfig])
@@ -386,7 +393,8 @@ const App: React.FC = () => {
     profilecenter: 'profile-center',
     profileCenter: 'profile-center',
     download: 'download',
-    packagepurchase: 'package-purchase'
+    packagepurchase: 'package-purchase',
+    ordercenter: 'order-center'
   }
 
   const componentMap = {
@@ -405,7 +413,8 @@ const App: React.FC = () => {
     profilecenter: ProfileCenterCard,
     profileCenter: ProfileCenterCard,
     download: DownloadCard,
-    packagepurchase: PackagePurchaseCard
+    packagepurchase: PackagePurchaseCard,
+    ordercenter: OrderCenterCard
   }
 
   // 调试当前的侧边栏配置
@@ -507,11 +516,8 @@ const App: React.FC = () => {
               className={`flex items-center justify-between h-full px-5 ${!useWindowFrame && platform === 'darwin' ? 'ml-[60px]' : ''}`}
             >
               <div className="flex items-center gap-4">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-sm">
-                  <MihomoIcon className="text-white text-sm" />
-                </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Mihomo Party</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">蓝快加速器</h3>
                 </div>
               </div>
               
@@ -545,6 +551,11 @@ const App: React.FC = () => {
                       return <PackagePurchaseCard key={key} iconOnly={false} />
                     }
                     
+                    // 特殊处理订单中心卡片
+                    if (key === 'ordercenter') {
+                      return <OrderCenterCard key={key} iconOnly={false} />
+                    }
+                    
                     // 使用适配器渲染其他卡片
                     return <SidebarCardAdapter key={key} cardKey={key} iconOnly={false} />
                   })}
@@ -573,6 +584,11 @@ const App: React.FC = () => {
                     // 特殊处理购买套餐卡片
                     if (key === 'packagepurchase') {
                       return <PackagePurchaseCard key={key} iconOnly={false} />
+                    }
+                    
+                    // 特殊处理订单中心卡片
+                    if (key === 'ordercenter') {
+                      return <OrderCenterCard key={key} iconOnly={false} />
                     }
                     
                     // 使用适配器渲染其他卡片

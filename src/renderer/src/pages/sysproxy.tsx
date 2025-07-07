@@ -280,13 +280,13 @@ const Sysproxy: React.FC = () => {
   return (
     <BasePage
       title={t('sysproxy.title')}
-      header={
-        changed && (
-          <Button color="primary" className="app-nodrag" size="sm" onPress={onSave}>
-            {t('common.save')}
-          </Button>
-        )
-      }
+      // header={
+      //   changed && (
+      //     <Button color="primary" className="app-nodrag" size="sm" onPress={onSave}>
+      //       {t('common.save')}
+      //     </Button>
+      //   )
+      // }
     >
       {openPacEditor && (
         <PacEditorModal
@@ -401,7 +401,7 @@ const Sysproxy: React.FC = () => {
       </SettingCard>
       
 
-      <SettingCard className="sysproxy-settings">
+      {/* <SettingCard className="sysproxy-settings">
         <SettingItem title={t('sysproxy.host.title')} divider>
           <Input
             size="sm"
@@ -483,7 +483,7 @@ const Sysproxy: React.FC = () => {
             </div>
           </>
         )}
-      </SettingCard>
+      </SettingCard> */}
 
       {/* Proxy Group Section */}
       {group && (

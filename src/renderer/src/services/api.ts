@@ -73,6 +73,76 @@ interface UserProfile {
   }
 }
 
+interface PlanItem {
+  id: number
+  group_id: number
+  transfer_enable: number
+  name: string
+  speed_limit: number
+  show: number
+  sort: number
+  renew: number
+  content: string
+  month_price: number
+  quarter_price: number | null
+  half_year_price: number | null
+  year_price: number | null
+  two_year_price: number | null
+  three_year_price: number | null
+  onetime_price: number | null
+  reset_price: number | null
+  reset_traffic_method: number
+  capacity_limit: number | null
+  created_at: number
+  updated_at: number
+}
+
+interface PlansResponse {
+  status: string
+  message: string
+  data: PlanItem[]
+}
+
+interface OrderItem {
+  invite_user_id: number | null
+  plan_id: number
+  coupon_id: number | null
+  payment_id: number | null
+  type: number
+  period: string
+  actual_commission_balance: number | null
+  balance_amount: number | null
+  callback_no: string
+  commission_balance: number
+  commission_status: number
+  created_at: number
+  discount_amount: number | null
+  handling_amount: number | null
+  paid_at: number
+  refund_amount: number | null
+  status: number
+  surplus_amount: number | null
+  surplus_order_ids: string | null
+  total_amount: number
+  trade_no: string
+  updated_at: number
+  plan: {
+    id: number
+    group_id: number
+    transfer_enable: number
+    name: string
+    speed_limit: number
+    show: number
+    sort: number
+  }
+}
+
+interface OrdersResponse {
+  status: string
+  message: string
+  data: OrderItem[]
+}
+
 class ApiService {
   private baseURL: string
 
@@ -204,6 +274,20 @@ class ApiService {
   async getUserProfile(): Promise<ApiResponse<UserProfile>> {
     return this.get<UserProfile>('/api/mobile/users/profile')
   }
+
+  /**
+   * 获取套餐列表
+   */
+  async getPlans(): Promise<ApiResponse<PlansResponse>> {
+    return this.get<PlansResponse>('/api/web/plans')
+  }
+
+  /**
+   * 获取订单列表
+   */
+  async getOrders(): Promise<ApiResponse<OrdersResponse>> {
+    return this.get<OrdersResponse>('/api/web/orders')
+  }
 }
 
 // // 创建API服务实例
@@ -213,4 +297,4 @@ class ApiService {
 export const apiService = new ApiService('http://localhost:3000')
 
 // 导出类型
-export type { ApiResponse, SendSmsRequest, SendSmsResponse, LoginResponse, UserProfile }
+export type { ApiResponse, SendSmsRequest, SendSmsResponse, LoginResponse, UserProfile, PlanItem, PlansResponse, OrderItem, OrdersResponse }
