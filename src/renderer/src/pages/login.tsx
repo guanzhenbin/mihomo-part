@@ -17,7 +17,7 @@ const LoginForm: FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSendingCode, setIsSendingCode] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(0);
-  const { login } = useAuth();
+  const { login, recheckAuth } = useAuth();
 
   const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     setEmail(event.target.value);
@@ -133,8 +133,46 @@ const LoginForm: FC = () => {
       }
 
       try {
-        const success = await login(password);
-        if (!success) {
+        // 先尝试调用API登录
+        console.log('🔐 Calling loginWithEmail API with:', { email, password });
+        const result = await apiService.loginWithEmail(email, password);
+        console.log('🔐 loginWithEmail API response:', result);
+        
+        if (result.success) {
+          console.log('🔐 Email login successful, user data:', result.data);
+          
+          let profileResult = null;
+          
+          // 保存token到sessionStorage
+          if (result.data?.data?.token) {
+            sessionStorage.setItem('mihomo-party-token', result.data.data.token);
+            sessionStorage.setItem('mihomo-party-auth', 'true'); // 设置认证状态
+            console.log('🔐 Token saved to sessionStorage:', result.data.data.token);
+            
+            // 获取完整用户信息
+            try {
+              console.log('🔐 Fetching user profile...');
+              profileResult = await apiService.getUserProfile();
+              console.log('🔐 User profile fetched:', profileResult);
+              
+              if (profileResult.success && profileResult.data) {
+                sessionStorage.setItem('mihomo-party-user', JSON.stringify(profileResult.data));
+                console.log('🔐 Complete user profile saved to sessionStorage');
+              }
+            } catch (profileError) {
+              console.error('🔐 Failed to fetch user profile:', profileError);
+              // 即使获取用户信息失败，也不影响登录
+            }
+          }
+          
+          const success = await login("dummy-password"); // 使用本地认证
+          if (!success) {
+            setError("登录失败，请重试");
+          } else {
+            // 登录成功后重新检查认证状态，传递已获取的profile数据避免重复调用
+            await recheckAuth(profileResult);
+          }
+        } else {
           setError("邮箱或密码错误，请重试");
         }
       } catch (error) {
@@ -174,15 +212,18 @@ const LoginForm: FC = () => {
         if (result.success) {
           console.log('🔐 SMS login successful, user data:', result.data);
           
+          let profileResult = null;
+          
           // 保存token到sessionStorage
           if (result.data?.data?.token) {
             sessionStorage.setItem('mihomo-party-token', result.data.data.token);
+            sessionStorage.setItem('mihomo-party-auth', 'true'); // 设置认证状态
             console.log('🔐 Token saved to sessionStorage:', result.data.data.token);
             
             // 获取完整用户信息
             try {
               console.log('🔐 Fetching user profile...');
-              const profileResult = await apiService.getUserProfile();
+              profileResult = await apiService.getUserProfile();
               console.log('🔐 User profile fetched:', profileResult);
               
               if (profileResult.success && profileResult.data) {
@@ -198,6 +239,9 @@ const LoginForm: FC = () => {
           const success = await login("dummy-password"); // 手机号登录不需要密码
           if (!success) {
             setError("登录失败，请重试");
+          } else {
+            // 登录成功后重新检查认证状态，传递已获取的profile数据避免重复调用
+            await recheckAuth(profileResult);
           }
         } else {
           console.log('🔐 SMS login failed:', result.message);

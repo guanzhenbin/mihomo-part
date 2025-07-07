@@ -206,8 +206,11 @@ class ApiService {
   }
 }
 
+// // 创建API服务实例
+// export const apiService = new ApiService('https://kuranode.com')
+
 // 创建API服务实例
-export const apiService = new ApiService('https://kuranode.com')
+export const apiService = new ApiService('http://localhost:3000')
 
 // 导出类型
 export type { ApiResponse, SendSmsRequest, SendSmsResponse, LoginResponse, UserProfile }

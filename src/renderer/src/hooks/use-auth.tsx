@@ -1,12 +1,14 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { useAppConfig } from './use-app-config'
 import { apiService } from '@renderer/services/api'
+import { addProfileItem, getProfileConfig } from '@renderer/utils/ipc'
 
 interface AuthContextType {
   isAuthenticated: boolean
   login: (password: string) => Promise<boolean>
   logout: () => void
   isLoading: boolean
+  recheckAuth: (cachedProfile?: any) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -23,77 +25,122 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
   // Force show login page for testing - set to true to test login functionality
   const FORCE_LOGIN_FOR_TESTING = true
 
-  useEffect(() => {
-    const checkAuth = async (): Promise<void> => {
-      try {
-        // Wait for appConfig to load
-        if (appConfig === undefined) {
-          setIsLoading(true)
-          return
-        }
+  const performAuthCheck = async (cachedProfile?: any): Promise<void> => {
+    try {
+      // Wait for appConfig to load
+      if (appConfig === undefined) {
+        setIsLoading(true)
+        return
+      }
 
-        // Add a minimum loading time to ensure user sees the loading screen
-        const startTime = Date.now()
-        const minLoadingTime = 800 // 800ms minimum loading time
+      // Add a minimum loading time to ensure user sees the loading screen
+      const startTime = Date.now()
+      const minLoadingTime = 800 // 800ms minimum loading time
 
-        const hasPassword = appConfig.encryptedPassword && appConfig.encryptedPassword.length > 0 || FORCE_LOGIN_FOR_TESTING
-        console.log('🔐 Auth check - hasPassword:', hasPassword, 'encryptedPassword length:', appConfig.encryptedPassword?.length, 'FORCE_LOGIN_FOR_TESTING:', FORCE_LOGIN_FOR_TESTING)
+      const hasPassword = appConfig.encryptedPassword && appConfig.encryptedPassword.length > 0 || FORCE_LOGIN_FOR_TESTING
+      console.log('🔐 Auth check - hasPassword:', hasPassword, 'encryptedPassword length:', appConfig.encryptedPassword?.length, 'FORCE_LOGIN_FOR_TESTING:', FORCE_LOGIN_FOR_TESTING)
 
-        if (!hasPassword) {
-          setIsAuthenticated(true)
-        } else {
-          // 检查是否有token
-          const token = sessionStorage.getItem('mihomo-party-token')
-          const sessionAuth = sessionStorage.getItem('mihomo-party-auth')
-          
-          if (token && sessionAuth === 'true') {
-            console.log('🔐 Found token, verifying with API...')
-            try {
-              // 调用API验证token有效性
-              const profileResult = await apiService.getUserProfile()
+      if (!hasPassword) {
+        setIsAuthenticated(true)
+      } else {
+        // 检查是否有token
+        const token = sessionStorage.getItem('mihomo-party-token')
+        const sessionAuth = sessionStorage.getItem('mihomo-party-auth')
+        
+        if (token && sessionAuth === 'true') {
+          console.log('🔐 Found token, verifying with API...')
+          try {
+            // 使用缓存的profile数据或调用API验证token有效性
+            let profileResult = cachedProfile
+            if (!profileResult) {
+              profileResult = await apiService.getUserProfile()
               console.log('🔐 Profile API response:', profileResult)
+            } else {
+              console.log('🔐 Using cached profile data:', profileResult)
+            }
+            
+            if (profileResult.success) {
+              console.log('🔐 Token is valid, user authenticated')
+              setIsAuthenticated(true)
               
-              if (profileResult.success) {
-                console.log('🔐 Token is valid, user authenticated')
-                setIsAuthenticated(true)
-              } else {
-                console.log('🔐 Token is invalid, clearing session')
-                sessionStorage.removeItem('mihomo-party-token')
-                sessionStorage.removeItem('mihomo-party-user')
-                sessionStorage.removeItem('mihomo-party-auth')
-                setIsAuthenticated(false)
+              // 自动添加订阅URL到订阅管理
+              try {
+                const userData = profileResult.data as any
+                if (userData?.data?.subscribe_url) {
+                  const subscribeUrl = userData.data.subscribe_url
+                  console.log('🔗 Checking subscription URL:', subscribeUrl)
+                  
+                  // 检查是否已经存在相同的订阅URL
+                  const profileConfig = await getProfileConfig()
+                  const existingSubscription = profileConfig.items?.find(
+                    item => item.type === 'remote' && item.url === subscribeUrl
+                  )
+                  
+                  if (existingSubscription) {
+                    console.log('📋 Subscription already exists:', existingSubscription.name)
+                  } else {
+                    // 生成订阅名称
+                    const subscriptionName = userData.data.plan?.name || 'API订阅'
+                    
+                    await addProfileItem({
+                      type: 'remote',
+                      name: subscriptionName,
+                      url: subscribeUrl,
+                      interval: 60, // 默认60分钟更新间隔
+                      useProxy: false
+                    })
+                    
+                    console.log('✅ Subscription added successfully:', subscriptionName)
+                  }
+                }
+              } catch (error) {
+                console.error('❌ Failed to add subscription:', error)
+                // 不影响认证流程，只记录错误
               }
-            } catch (error) {
-              console.error('🔐 Profile API error:', error)
-              // API调用失败，清除session
+            } else {
+              console.log('🔐 Token is invalid, clearing session')
               sessionStorage.removeItem('mihomo-party-token')
               sessionStorage.removeItem('mihomo-party-user')
               sessionStorage.removeItem('mihomo-party-auth')
               setIsAuthenticated(false)
             }
-          } else {
-            console.log('🔐 No valid token found')
+          } catch (error) {
+            console.error('🔐 Profile API error:', error)
+            // API调用失败，清除session
+            sessionStorage.removeItem('mihomo-party-token')
+            sessionStorage.removeItem('mihomo-party-user')
+            sessionStorage.removeItem('mihomo-party-auth')
             setIsAuthenticated(false)
           }
-        }
-
-        // Ensure minimum loading time
-        const elapsedTime = Date.now() - startTime
-        if (elapsedTime < minLoadingTime) {
-          await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime))
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error)
-        setIsAuthenticated(false)
-      } finally {
-        if (appConfig !== undefined) {
-          setIsLoading(false)
+        } else {
+          console.log('🔐 No valid token found')
+          setIsAuthenticated(false)
         }
       }
-    }
 
-    checkAuth()
-  }, [appConfig])
+      // Ensure minimum loading time
+      const elapsedTime = Date.now() - startTime
+      if (elapsedTime < minLoadingTime) {
+        await new Promise(resolve => setTimeout(resolve, minLoadingTime - elapsedTime))
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error)
+      setIsAuthenticated(false)
+    } finally {
+      if (appConfig !== undefined) {
+        setIsLoading(false)
+      }
+    }
+  }
+
+  const recheckAuth = async (cachedProfile?: any): Promise<void> => {
+    await performAuthCheck(cachedProfile)
+  }
+
+  useEffect(() => {
+    performAuthCheck()
+  }, [appConfig?.encryptedPassword, appConfig === undefined])
+
 
   const login = async (password: string): Promise<boolean> => {
     try {
@@ -141,7 +188,8 @@ export function AuthProvider({ children }: AuthProviderProps): React.JSX.Element
     isAuthenticated,
     login,
     logout,
-    isLoading
+    isLoading,
+    recheckAuth
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

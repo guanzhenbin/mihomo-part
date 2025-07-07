@@ -37,7 +37,7 @@ const Proxies: React.FC = () => {
     delayTestConcurrency = 50
   } = appConfig || {}
   
-  const [cols, setCols] = useState(1)
+  // const [cols, setCols] = useState(1)
   const [delaying, setDelaying] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   
@@ -113,29 +113,29 @@ const Proxies: React.FC = () => {
     }
   }, [group, filteredProxies, delayTestConcurrency, mutate])
 
-  const calcCols = useCallback((): number => {
-    if (proxyCols !== 'auto') {
-      // biome-ignore lint/style/useNumberNamespace: <explanation>
-      return parseInt(proxyCols)
-    }
-    if (window.matchMedia('(min-width: 1536px)').matches) return 5
-    if (window.matchMedia('(min-width: 1280px)').matches) return 4
-    if (window.matchMedia('(min-width: 1024px)').matches) return 3
-    return 2
-  }, [proxyCols])
+  // const calcCols = useCallback((): number => {
+  //   if (proxyCols !== 'auto') {
+  //     // biome-ignore lint/style/useNumberNamespace: <explanation>
+  //     return parseInt(proxyCols)
+  //   }
+  //   if (window.matchMedia('(min-width: 1536px)').matches) return 5
+  //   if (window.matchMedia('(min-width: 1280px)').matches) return 4
+  //   if (window.matchMedia('(min-width: 1024px)').matches) return 3
+  //   return 2
+  // }, [proxyCols])
 
-  useEffect(() => {
-    const handleResize = (): void => {
-      setCols(calcCols())
-    }
+  // useEffect(() => {
+  //   const handleResize = (): void => {
+  //     setCols(calcCols())
+  //   }
 
-    handleResize() // 初始化
-    window.addEventListener('resize', handleResize)
+  //   handleResize() // 初始化
+  //   window.addEventListener('resize', handleResize)
     
-    return (): void => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [calcCols])
+  //   return (): void => {
+  //     window.removeEventListener('resize', handleResize)
+  //   }
+  // }, [calcCols])
 
   // 处理图标加载
   useEffect(() => {
