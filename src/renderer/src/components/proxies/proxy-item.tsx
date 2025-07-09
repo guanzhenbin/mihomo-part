@@ -1,7 +1,7 @@
 import { Button, Card, CardBody } from '@heroui/react'
 import { mihomoUnfixedProxy } from '@renderer/utils/ipc'
 import React, { useMemo, useState } from 'react'
-import { FaMapPin, FaCheck, FaSignal } from 'react-icons/fa6'
+import { FaMapPin, FaCheck } from 'react-icons/fa6'
 
 interface Props {
   mutateProxies: () => void
@@ -11,6 +11,42 @@ interface Props {
   group: IMihomoMixedGroup
   onSelect: (group: string, proxy: string) => void
   selected: boolean
+}
+
+// 获取国家旗帜emoji的函数
+const getCountryFlag = (proxyName: string): string => {
+  const name = proxyName.toLowerCase()
+  
+  // 国家名称到旗帜emoji的映射
+  if (name.includes('阿根廷') || name.includes('argentina')) return '🇦🇷'
+  if (name.includes('澳大利亚') || name.includes('australia')) return '🇦🇺'
+  if (name.includes('波兰') || name.includes('poland')) return '🇵🇱'
+  if (name.includes('美国') || name.includes('usa') || name.includes('united states')) return '🇺🇸'
+  if (name.includes('英国') || name.includes('uk') || name.includes('united kingdom')) return '🇬🇧'
+  if (name.includes('日本') || name.includes('japan')) return '🇯🇵'
+  if (name.includes('韩国') || name.includes('korea') || name.includes('south korea')) return '🇰🇷'
+  if (name.includes('新加坡') || name.includes('singapore')) return '🇸🇬'
+  if (name.includes('香港') || name.includes('hong kong')) return '🇭🇰'
+  if (name.includes('台湾') || name.includes('taiwan')) return '🇹🇼'
+  if (name.includes('德国') || name.includes('germany')) return '🇩🇪'
+  if (name.includes('法国') || name.includes('france')) return '🇫🇷'
+  if (name.includes('加拿大') || name.includes('canada')) return '🇨🇦'
+  if (name.includes('荷兰') || name.includes('netherlands')) return '🇳🇱'
+  if (name.includes('瑞士') || name.includes('switzerland')) return '🇨🇭'
+  if (name.includes('意大利') || name.includes('italy')) return '🇮🇹'
+  if (name.includes('西班牙') || name.includes('spain')) return '🇪🇸'
+  if (name.includes('俄罗斯') || name.includes('russia')) return '🇷🇺'
+  if (name.includes('印度') || name.includes('india')) return '🇮🇳'
+  if (name.includes('巴西') || name.includes('brazil')) return '🇧🇷'
+  if (name.includes('土耳其') || name.includes('turkey')) return '🇹🇷'
+  if (name.includes('泰国') || name.includes('thailand')) return '🇹🇭'
+  if (name.includes('马来西亚') || name.includes('malaysia')) return '🇲🇾'
+  if (name.includes('菲律宾') || name.includes('philippines')) return '🇵🇭'
+  if (name.includes('印尼') || name.includes('indonesia')) return '🇮🇩'
+  if (name.includes('越南') || name.includes('vietnam')) return '🇻🇳'
+  
+  // 默认返回地球图标
+  return '🌍'
 }
 
 const ProxyItem: React.FC<Props> = (props) => {
@@ -64,7 +100,7 @@ const ProxyItem: React.FC<Props> = (props) => {
                   proxy.type === 'Selector' ? 'bg-orange-500' :
                   'bg-gray-500'
                 }`}>
-                  <FaSignal className="text-white text-lg" />
+                  <span className="text-2xl">{getCountryFlag(proxy.name)}</span>
                 </div>
                 
                 {/* 标题和类型 */}
@@ -139,7 +175,7 @@ const ProxyItem: React.FC<Props> = (props) => {
                 proxy.type === 'Selector' ? 'bg-orange-500' :
                 'bg-gray-500'
               }`}>
-                <FaSignal className="text-white text-base" />
+                <span className="text-xl">{getCountryFlag(proxy.name)}</span>
               </div>
               
               {/* 信息 */}

@@ -1,12 +1,18 @@
 import { useState } from 'react'
-import { Card, CardBody, Button, Chip, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from '@heroui/react'
+import { Card, CardBody, Button, Chip, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
-import { Receipt, Eye, RefreshCw, Calendar, DollarSign, Package, CheckCircle } from 'lucide-react'
+import { Receipt, Eye, RefreshCw, Calendar, DollarSign, Package, CheckCircle, X, Clock, AlertTriangle, CheckCircle2, Info } from 'lucide-react'
 import { apiService, type OrderItem } from '@renderer/services/api'
-import useSWR from 'swr'
+import useSWR, { mutate } from 'swr'
 
 const OrderCenterPage: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<number | null>(null)
+  const [payingOrder, setPayingOrder] = useState<string | null>(null)
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [currentPaymentOrder, setCurrentPaymentOrder] = useState<any>(null)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [checkingStatus, setCheckingStatus] = useState(false)
+  const [statusMessage, setStatusMessage] = useState<{type: 'success' | 'info' | 'error', text: string} | null>(null)
 
   // 使用SWR获取订单数据，避免重复请求
   const { data: ordersData, isLoading } = useSWR(
@@ -95,6 +101,164 @@ const OrderCenterPage: React.FC = () => {
         return '已过期'
       default:
         return '未知'
+    }
+  }
+
+  const handlePayment = async (orderId: string) => {
+    setPayingOrder(orderId)
+    
+    try {
+      const response = await apiService.getCheckoutUrl(orderId)
+      if (response.success && response.data?.data) {
+        // 找到当前订单信息
+        const order = orders.find(o => o.id === orderId)
+        if (order) {
+          setCurrentPaymentOrder(order)
+          setShowPaymentModal(true)
+        }
+        // 打开支付页面
+        window.open(response.data.data, '_blank')
+      } else {
+        console.error('获取支付地址失败:', response.message)
+      }
+    } catch (error) {
+      console.error('获取支付地址时发生错误:', error)
+    } finally {
+      setPayingOrder(null)
+    }
+  }
+
+  const handleCancelOrder = () => {
+    // 显示确认对话框
+    setShowCancelConfirm(true)
+  }
+
+  const confirmCancelOrder = async () => {
+    // 确认取消订单
+    setShowCancelConfirm(false)
+    setShowPaymentModal(false)
+    setCurrentPaymentOrder(null)
+    console.log('取消订单:', currentPaymentOrder?.id)
+  }
+
+  const cancelCancelOrder = () => {
+    // 取消取消操作，继续等待支付
+    setShowCancelConfirm(false)
+  }
+
+  const handleCheckPaymentStatus = async () => {
+    if (!currentPaymentOrder) return
+    
+    setCheckingStatus(true)
+    setStatusMessage(null)
+    
+    try {
+      const response = await apiService.checkOrderStatus(currentPaymentOrder.id)
+      if (response.success && response.data?.data !== undefined) {
+        const paymentStatus = response.data.data
+        
+        switch (paymentStatus) {
+          case 0:
+            // 等待付款
+            setStatusMessage({
+              type: 'info',
+              text: '⏳ 订单等待付款，请在支付页面完成支付后再次检查'
+            })
+            break
+            
+          case 1:
+            // 开通中
+            setStatusMessage({
+              type: 'info',
+              text: '🔄 订单开通中，请稍等片刻再次检查'
+            })
+            break
+            
+          case 2:
+            // 已取消
+            setStatusMessage({
+              type: 'error',
+              text: '❌ 订单已取消'
+            })
+            // 延迟关闭弹窗
+            setTimeout(() => {
+              mutate('orders')
+              setShowPaymentModal(false)
+              setCurrentPaymentOrder(null)
+              setStatusMessage(null)
+            }, 2000)
+            break
+            
+          case 3:
+            // 已完成
+            setStatusMessage({
+              type: 'success',
+              text: '🎉 订单已完成！正在更新订单状态...'
+            })
+            // 延迟关闭弹窗，让用户看到成功消息
+            setTimeout(async () => {
+              // 刷新订单列表
+              mutate('orders')
+              // 重新调用 profile 接口更新用户信息
+              try {
+                await apiService.getUserProfile()
+                // 可以在这里刷新用户profile相关的缓存
+                // 如果使用了SWR缓存profile数据，可以这样刷新：
+                // mutate('profile')
+              } catch (error) {
+                console.error('刷新用户信息失败:', error)
+              }
+              setShowPaymentModal(false)
+              setCurrentPaymentOrder(null)
+              setStatusMessage(null)
+            }, 2000)
+            break
+            
+          case 4:
+            // 已折抵
+            setStatusMessage({
+              type: 'success',
+              text: '✅ 订单已折抵完成！正在更新订单状态...'
+            })
+            // 延迟关闭弹窗
+            setTimeout(async () => {
+              // 刷新订单列表
+              mutate('orders')
+              // 重新调用 profile 接口更新用户信息
+              try {
+                await apiService.getUserProfile()
+                // 可以在这里刷新用户profile相关的缓存
+                // 如果使用了SWR缓存profile数据，可以这样刷新：
+                // mutate('profile')
+              } catch (error) {
+                console.error('刷新用户信息失败:', error)
+              }
+              setShowPaymentModal(false)
+              setCurrentPaymentOrder(null)
+              setStatusMessage(null)
+            }, 2000)
+            break
+            
+          default:
+            // 未知状态
+            setStatusMessage({
+              type: 'error',
+              text: `❌ 订单状态异常 (状态码: ${paymentStatus})，请联系客服`
+            })
+        }
+      } else {
+        setStatusMessage({
+          type: 'error',
+          text: '❌ 检查支付状态失败，请稍后重试'
+        })
+      }
+    } catch (error) {
+      setStatusMessage({
+        type: 'error',
+        text: '❌ 网络错误，请检查网络连接后重试'
+      })
+    } finally {
+      setCheckingStatus(false)
     }
   }
 
@@ -238,8 +402,10 @@ const OrderCenterPage: React.FC = () => {
                               size="sm"
                               color="primary"
                               startContent={<RefreshCw className="w-4 h-4" />}
+                              onPress={() => handlePayment(order.id)}
+                              disabled={payingOrder === order.id}
                             >
-                              支付
+                              {payingOrder === order.id ? '处理中...' : '支付'}
                             </Button>
                           )}
                         </div>
@@ -252,6 +418,207 @@ const OrderCenterPage: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* 支付等待弹窗 */}
+      <Modal 
+        isOpen={showPaymentModal} 
+        onClose={() => {}} // 禁用关闭
+        size="md"
+        backdrop="blur"
+        hideCloseButton={true} // 隐藏关闭按钮
+        isDismissable={false} // 禁用点击外部关闭
+        isKeyboardDismissDisabled={true} // 禁用ESC键关闭
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  等待支付中
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  请在新打开的页面中完成支付
+                </p>
+              </div>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            {currentPaymentOrder && (
+              <div className="space-y-4">
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">订单号:</span>
+                    <span className="font-mono text-sm">{currentPaymentOrder.id}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">套餐:</span>
+                    <span className="font-medium">{currentPaymentOrder.plan_name}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">金额:</span>
+                    <span className="font-bold text-lg text-primary">¥{currentPaymentOrder.amount}</span>
+                  </div>
+                </div>
+                
+                <div className="text-center">
+                  <div className="relative mx-auto mb-6 w-20 h-20">
+                    {/* 外圆环 */}
+                    <div className="absolute inset-0 w-20 h-20 border-4 border-blue-200 dark:border-blue-800 rounded-full"></div>
+                    {/* 旋转的渐变圆环 */}
+                    <div className="absolute inset-0 w-20 h-20 border-4 border-transparent border-t-blue-500 border-r-blue-400 rounded-full animate-spin"></div>
+                    {/* 内部脉动圆点 */}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                    </div>
+                    {/* 装饰性光晕 */}
+                    <div className="absolute inset-0 w-20 h-20 bg-gradient-to-r from-blue-400/20 to-indigo-400/20 rounded-full blur-sm animate-pulse"></div>
+                  </div>
+                  
+                  {/* 动态文字提示 */}
+                  <div className="space-y-3">
+                    <p className="text-lg font-medium text-slate-800 dark:text-slate-200 animate-pulse">
+                      等待支付中...
+                    </p>
+                    <div className="space-y-2">
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        支付页面已在新窗口中打开
+                      </p>
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                          💡 完成支付后，请点击"检查订单支付状态"按钮确认订单状态
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* 装饰性动画点 */}
+                  <div className="flex justify-center items-center gap-2 mt-4">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  </div>
+                </div>
+                
+                {/* 状态消息提示 */}
+                {statusMessage && (
+                  <div className={`mt-4 p-4 rounded-lg border ${
+                    statusMessage.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' :
+                    statusMessage.type === 'info' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' :
+                    'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      {statusMessage.type === 'success' && (
+                        <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                      )}
+                      {statusMessage.type === 'info' && (
+                        <Info className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                      )}
+                      {statusMessage.type === 'error' && (
+                        <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                      )}
+                      <p className={`text-sm font-medium ${
+                        statusMessage.type === 'success' ? 'text-green-800 dark:text-green-200' :
+                        statusMessage.type === 'info' ? 'text-blue-800 dark:text-blue-200' :
+                        'text-red-800 dark:text-red-200'
+                      }`}>
+                        {statusMessage.text}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button 
+              color="danger" 
+              variant="light" 
+              onPress={handleCancelOrder}
+              startContent={<X className="w-4 h-4" />}
+            >
+              取消订单
+            </Button>
+            <Button 
+              color="primary" 
+              onPress={handleCheckPaymentStatus}
+              startContent={<RefreshCw className={`w-4 h-4 ${checkingStatus ? 'animate-spin' : ''}`} />}
+              disabled={checkingStatus}
+            >
+              {checkingStatus ? '检查中...' : '检查订单支付状态'}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 取消订单确认弹窗 */}
+      <Modal 
+        isOpen={showCancelConfirm} 
+        onClose={() => {}}
+        size="sm"
+        backdrop="blur"
+        hideCloseButton={true}
+        isDismissable={false}
+        isKeyboardDismissDisabled={true}
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-red-600 rounded-xl flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  确认取消订单
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  此操作无法撤销
+                </p>
+              </div>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <p className="text-sm text-red-800 dark:text-red-200">
+                  ⚠️ 您确定要取消当前订单吗？取消后将无法恢复，如果您已经完成支付，建议先检查订单支付状态。
+                </p>
+              </div>
+              
+              {currentPaymentOrder && (
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-xs text-slate-600 dark:text-slate-400">订单号:</span>
+                    <span className="font-mono text-xs">{currentPaymentOrder.id}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-600 dark:text-slate-400">金额:</span>
+                    <span className="font-semibold text-sm text-red-600 dark:text-red-400">¥{currentPaymentOrder.amount}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button 
+              color="default" 
+              variant="light" 
+              onPress={cancelCancelOrder}
+            >
+              继续等待支付
+            </Button>
+            <Button 
+              color="danger" 
+              onPress={confirmCancelOrder}
+              startContent={<X className="w-4 h-4" />}
+            >
+              确认取消订单
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </BasePage>
   )
 }

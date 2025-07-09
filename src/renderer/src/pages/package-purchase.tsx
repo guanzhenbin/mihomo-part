@@ -92,10 +92,46 @@ const PackagePurchasePage: React.FC = () => {
     return Array.from(listItems).map(li => li.textContent || '').filter(text => text.length > 0)
   }
 
-  const handlePurchase = (planId: number) => {
+  const handlePurchase = async (planId: number) => {
     setSelectedPlan(planId)
-    // 这里可以添加购买逻辑
-    console.log('购买套餐:', planId)
+    
+    // 找到对应的套餐
+    const selectedPlan = plans.find(p => p.id === planId)
+    if (!selectedPlan) {
+      console.error('未找到套餐')
+      setSelectedPlan(null)
+      return
+    }
+    
+    // 根据套餐的period确定period参数
+    let period = 'month_price'
+    if (selectedPlan.period === '季') {
+      period = 'quarter_price'
+    } else if (selectedPlan.period === '半年') {
+      period = 'half_year_price'
+    } else if (selectedPlan.period === '年') {
+      period = 'year_price'
+    } else if (selectedPlan.period === '两年') {
+      period = 'two_year_price'
+    } else if (selectedPlan.period === '三年') {
+      period = 'three_year_price'
+    } else if (selectedPlan.period === '一次性') {
+      period = 'onetime_price'
+    }
+    
+    try {
+      const response = await apiService.createOrder(period, planId)
+      if (response.success) {
+        console.log('订单创建成功:', response.data)
+        // 可以在这里添加成功后的逻辑，比如跳转到支付页面
+      } else {
+        console.error('订单创建失败:', response.message)
+      }
+    } catch (error) {
+      console.error('创建订单时发生错误:', error)
+    } finally {
+      setSelectedPlan(null)
+    }
   }
 
   if (loading) {

@@ -1,4 +1,4 @@
-appId: party.mihomo.app
+appId: com.expressvpn.app
 productName: Mihomo Party
 directories:
   buildResources: build

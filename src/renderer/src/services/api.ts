@@ -143,6 +143,36 @@ interface OrdersResponse {
   data: OrderItem[]
 }
 
+interface CreateOrderRequest {
+  period: string
+  plan_id: number
+}
+
+interface CreateOrderResponse {
+  status: string
+  message: string
+  data: {
+    id: string
+    trade_no: string
+    plan_id: number
+    total_amount: number
+    status: number
+    created_at: number
+  }
+}
+
+interface CheckoutResponse {
+  status: string
+  message: string
+  data: string // 支付URL直接在data字段中
+}
+
+interface CheckOrderStatusResponse {
+  status: string
+  message: string
+  data: number // 0: 等待付款, 1: 开通中, 2: 已取消, 3: 已完成, 4: 已折抵
+}
+
 class ApiService {
   private baseURL: string
 
@@ -288,6 +318,34 @@ class ApiService {
   async getOrders(): Promise<ApiResponse<OrdersResponse>> {
     return this.get<OrdersResponse>('/api/web/orders')
   }
+
+  /**
+   * 创建订单
+   */
+  async createOrder(period: string, plan_id: number): Promise<ApiResponse<CreateOrderResponse>> {
+    return this.post<CreateOrderResponse>('/api/web/orders', {
+      period,
+      plan_id
+    })
+  }
+
+  /**
+   * 获取支付地址
+   */
+  async getCheckoutUrl(trade_no: string): Promise<ApiResponse<CheckoutResponse>> {
+    return this.get<CheckoutResponse>('/api/web/orders/checkout', {
+      trade_no
+    })
+  }
+
+  /**
+   * 检查订单支付状态
+   */
+  async checkOrderStatus(trade_no: string): Promise<ApiResponse<CheckOrderStatusResponse>> {
+    return this.get<CheckOrderStatusResponse>('/api/web/orders/check', {
+      trade_no
+    })
+  }
 }
 
 // // 创建API服务实例
@@ -297,4 +355,4 @@ class ApiService {
 export const apiService = new ApiService('http://localhost:3000')
 
 // 导出类型
-export type { ApiResponse, SendSmsRequest, SendSmsResponse, LoginResponse, UserProfile, PlanItem, PlansResponse, OrderItem, OrdersResponse }
+export type { ApiResponse, SendSmsRequest, SendSmsResponse, LoginResponse, UserProfile, PlanItem, PlansResponse, OrderItem, OrdersResponse, CreateOrderRequest, CreateOrderResponse, CheckoutResponse, CheckOrderStatusResponse }
