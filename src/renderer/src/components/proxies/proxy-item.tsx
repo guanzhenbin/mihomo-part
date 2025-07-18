@@ -77,53 +77,68 @@ const ProxyItem: React.FC<Props> = (props) => {
       onPress={() => onSelect(group.name, proxy.name)}
       isPressable
       fullWidth
-      className={`relative transition-all duration-200 cursor-pointer ${
+      className={`relative transition-all duration-300 cursor-pointer w-full max-w-full overflow-hidden ${
         selected 
-          ? 'bg-white dark:bg-gray-800 border-2 border-blue-500 dark:border-blue-400' 
-          : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+          ? 'bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 dark:from-blue-800/60 dark:via-indigo-800/60 dark:to-purple-800/60 border-2 border-blue-600 dark:border-blue-400 shadow-2xl shadow-blue-300/60 dark:shadow-blue-800/60 ring-2 ring-blue-300/50 dark:ring-blue-500/50' 
+          : 'bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm border border-gray-200/80 dark:border-gray-700/80 hover:border-blue-500/90 dark:hover:border-blue-400/90 hover:shadow-xl hover:shadow-blue-200/40 dark:hover:shadow-blue-800/40 hover:bg-gradient-to-br hover:from-blue-50/50 hover:via-indigo-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/20 dark:hover:via-indigo-900/20 dark:hover:to-purple-900/20 hover:ring-1 hover:ring-blue-200/30 dark:hover:ring-blue-600/30'
       }`}
       radius="lg"
-      shadow="sm"
+      shadow={selected ? "lg" : "sm"}
     >
-      <CardBody className="p-5 sm:p-6">
+      <CardBody className="p-4 sm:p-5 w-full overflow-hidden">
         {proxyDisplayMode === 'full' ? (
           /* Full Mode - 垂直布局 */
-          <div className="space-y-4">
+          <div className="space-y-3 w-full">
             {/* 头部 - 图标、标题和状态 */}
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex items-start justify-between w-full">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 {/* 图标 */}
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                  proxy.type === 'Vmess' ? 'bg-blue-500' :
-                  proxy.type === 'Shadowsocks' ? 'bg-purple-500' :
-                  proxy.type === 'URLTest' ? 'bg-green-500' :
-                  proxy.type === 'Selector' ? 'bg-orange-500' :
-                  'bg-gray-500'
-                }`}>
-                  <span className="text-2xl">{getCountryFlag(proxy.name)}</span>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                  selected 
+                    ? 'shadow-xl ring-2 ring-blue-300/70 dark:ring-blue-400/70' 
+                    : 'shadow-lg ring-1 ring-white/30 hover:shadow-xl hover:ring-2 hover:ring-blue-200/50 dark:hover:ring-blue-500/50'
+                } ${
+                  proxy.type === 'Vmess' ? 'bg-gradient-to-br from-blue-500 to-blue-600' :
+                  proxy.type === 'Shadowsocks' ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
+                  proxy.type === 'URLTest' ? 'bg-gradient-to-br from-green-500 to-green-600' :
+                  proxy.type === 'Selector' ? 'bg-gradient-to-br from-orange-500 to-orange-600' :
+                  'bg-gradient-to-br from-gray-500 to-gray-600'
+                } backdrop-blur-sm`}>
+                  <span className={`text-xl transition-all duration-300 ${
+                    selected ? 'drop-shadow-md' : 'drop-shadow-sm'
+                  }`}>{getCountryFlag(proxy.name)}</span>
                 </div>
                 
                 {/* 标题和类型 */}
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 overflow-hidden">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg" title={proxy.name}>
+                    <h3 className={`font-bold text-lg truncate transition-colors duration-300 ${
+                      selected 
+                        ? 'text-blue-800 dark:text-blue-200 drop-shadow-sm' 
+                        : 'text-gray-900 dark:text-gray-100'
+                    }`} title={proxy.name}>
                       {proxy.name}
                     </h3>
                     {proxy.alive && (
-                      <FaCheck className="text-green-500 text-sm flex-shrink-0" />
+                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full flex-shrink-0 transition-all duration-300 ${
+                        selected 
+                          ? 'bg-emerald-100 dark:bg-emerald-900/40 ring-1 ring-emerald-300 dark:ring-emerald-600/50' 
+                          : 'bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-800/40'
+                      }`}>
+                        <FaCheck className={`text-xs transition-colors duration-300 ${
+                          selected 
+                            ? 'text-emerald-600 dark:text-emerald-400' 
+                            : 'text-green-600 dark:text-green-400'
+                        }`} />
+                        <span className={`text-xs font-medium whitespace-nowrap transition-colors duration-300 ${
+                          selected 
+                            ? 'text-emerald-700 dark:text-emerald-300' 
+                            : 'text-green-700 dark:text-green-300'
+                        }`}>在线</span>
+                      </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    {/* <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {proxy.type} proxy connection
-                    </span> */}
-                    {proxy.alive && (
-                      <>
-                        <span className="text-gray-300">•</span>
-                        <span className="text-green-600 dark:text-green-400 text-sm font-medium">Online</span>
-                      </>
-                    )}
-                  </div>
+
                 </div>
               </div>
               
@@ -138,7 +153,7 @@ const ProxyItem: React.FC<Props> = (props) => {
                     await mihomoUnfixedProxy(group.name)
                     mutateProxies()
                   }}
-                  className="w-8 h-8"
+                  className="w-8 h-8 flex-shrink-0"
                 >
                   <FaMapPin className="text-sm" />
                 </Button>
@@ -146,64 +161,83 @@ const ProxyItem: React.FC<Props> = (props) => {
             </div>
             
             {/* 底部 - 操作按钮 */}
-            <div className="flex justify-end">
+            <div className="flex justify-end w-full">
               <Button
                 size="md"
                 isLoading={loading}
                 onPress={onDelay}
-                variant="bordered"
-                className="font-medium text-sm px-6 h-9 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500"
+                variant={selected ? "shadow" : "bordered"}
+                color={selected ? "primary" : "default"}
+                className={`font-bold text-sm px-6 h-9 transition-all duration-300 whitespace-nowrap ${
+                  selected 
+                    ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white border-none shadow-xl shadow-blue-400/70 dark:shadow-blue-700/70 ring-2 ring-blue-300/60 dark:ring-blue-400/60 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-800 hover:shadow-2xl hover:shadow-blue-500/80 dark:hover:shadow-blue-600/80 hover:ring-blue-200/80 dark:hover:ring-blue-300/80' 
+                    : 'border-2 border-gray-400 dark:border-gray-500 bg-white/80 dark:bg-gray-700/80 text-gray-700 dark:text-gray-200 hover:border-blue-600 dark:hover:border-blue-400 hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-800/40 dark:hover:to-indigo-800/40 hover:text-blue-800 dark:hover:text-blue-200 hover:shadow-xl hover:shadow-blue-300/50 dark:hover:shadow-blue-700/50 hover:ring-2 hover:ring-blue-200/50 dark:hover:ring-blue-500/50'
+                }`}
                 radius="lg"
               >
-                {loading ? "Testing..." : 
-                 selected ? (delay === -1 ? "Connected" : `${delay}ms`) :
-                 delay === -1 ? "Connect" : 
-                 delay === 0 ? "Timeout" : `${delay}ms`}
+                {loading ? "测试中..." : 
+                 selected ? (delay === -1 ? "已连接" : `${delay}ms`) :
+                 delay === -1 ? "连接" : 
+                 delay === 0 ? "超时" : `${delay}ms`}
               </Button>
             </div>
           </div>
         ) : (
           /* Simple Mode - 水平布局 */
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between w-full gap-2">
             {/* 左侧 - 图标和信息 */}
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
               {/* 图标 */}
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                proxy.type === 'Vmess' ? 'bg-blue-500' :
-                proxy.type === 'Shadowsocks' ? 'bg-purple-500' :
-                proxy.type === 'URLTest' ? 'bg-green-500' :
-                proxy.type === 'Selector' ? 'bg-orange-500' :
-                'bg-gray-500'
-              }`}>
-                <span className="text-xl">{getCountryFlag(proxy.name)}</span>
+              <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+                selected 
+                  ? 'shadow-lg ring-2 ring-blue-300/60 dark:ring-blue-400/60' 
+                  : 'shadow-md ring-1 ring-white/30 hover:shadow-lg hover:ring-2 hover:ring-blue-200/40 dark:hover:ring-blue-500/40'
+              } ${
+                proxy.type === 'Vmess' ? 'bg-gradient-to-br from-blue-500 to-blue-600' :
+                proxy.type === 'Shadowsocks' ? 'bg-gradient-to-br from-purple-500 to-purple-600' :
+                proxy.type === 'URLTest' ? 'bg-gradient-to-br from-green-500 to-green-600' :
+                proxy.type === 'Selector' ? 'bg-gradient-to-br from-orange-500 to-orange-600' :
+                'bg-gradient-to-br from-gray-500 to-gray-600'
+              } backdrop-blur-sm`}>
+                <span className={`text-lg transition-all duration-300 ${
+                  selected ? 'drop-shadow-md' : 'drop-shadow-sm'
+                }`}>{getCountryFlag(proxy.name)}</span>
               </div>
               
               {/* 信息 */}
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 overflow-hidden">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-sm truncate" title={proxy.name}>
+                  <h3 className={`font-bold text-sm truncate max-w-full transition-colors duration-300 ${
+                    selected 
+                      ? 'text-blue-800 dark:text-blue-200 drop-shadow-sm' 
+                      : 'text-gray-900 dark:text-gray-100'
+                  }`} title={proxy.name}>
                     {proxy.name}
                   </h3>
                   {proxy.alive && (
-                    <FaCheck className="text-green-500 text-xs flex-shrink-0" />
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">
-                    {proxy.type} proxy
-                  </span>
-                  {proxy.alive && (
-                    <>
-                      <span className="text-gray-300">•</span>
-                      <span className="text-green-600 dark:text-green-400 text-xs">Online</span>
-                    </>
+                    <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full flex-shrink-0 transition-all duration-300 ${
+                      selected 
+                        ? 'bg-emerald-100 dark:bg-emerald-900/40 ring-1 ring-emerald-300 dark:ring-emerald-600/50' 
+                        : 'bg-green-100 dark:bg-green-900/30 hover:bg-green-200 dark:hover:bg-green-800/40'
+                    }`}>
+                      <FaCheck className={`text-xs transition-colors duration-300 ${
+                        selected 
+                          ? 'text-emerald-600 dark:text-emerald-400' 
+                          : 'text-green-600 dark:text-green-400'
+                      }`} />
+                      <span className={`text-xs font-medium whitespace-nowrap transition-colors duration-300 ${
+                        selected 
+                          ? 'text-emerald-700 dark:text-emerald-300' 
+                          : 'text-green-700 dark:text-green-300'
+                      }`}>在线</span>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
             
             {/* 右侧 - 操作按钮 */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-center gap-1 flex-shrink-0">
               {fixed && (
                 <Button
                   isIconOnly
@@ -214,9 +248,9 @@ const ProxyItem: React.FC<Props> = (props) => {
                     await mihomoUnfixedProxy(group.name)
                     mutateProxies()
                   }}
-                  className="w-8 h-8"
+                  className="w-7 h-7"
                 >
-                  <FaMapPin className="text-sm" />
+                  <FaMapPin className="text-xs" />
                 </Button>
               )}
               
@@ -224,14 +258,19 @@ const ProxyItem: React.FC<Props> = (props) => {
                 size="sm"
                 isLoading={loading}
                 onPress={onDelay}
-                variant="bordered"
-                className="font-medium text-xs px-4 h-8 border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 whitespace-nowrap"
+                variant={selected ? "shadow" : "bordered"}
+                color={selected ? "primary" : "default"}
+                className={`font-bold text-xs px-3 h-8 transition-all duration-300 whitespace-nowrap min-w-0 ${
+                  selected 
+                    ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white border-none shadow-lg shadow-blue-400/60 dark:shadow-blue-700/60 ring-1 ring-blue-300/50 dark:ring-blue-400/50 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-800 hover:shadow-xl hover:shadow-blue-500/70 dark:hover:shadow-blue-600/70 hover:ring-blue-200/70 dark:hover:ring-blue-300/70' 
+                    : 'border-2 border-gray-400 dark:border-gray-500 bg-white/80 dark:bg-gray-700/80 text-gray-700 dark:text-gray-200 hover:border-blue-600 dark:hover:border-blue-400 hover:bg-gradient-to-r hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-800/40 dark:hover:to-indigo-800/40 hover:text-blue-800 dark:hover:text-blue-200 hover:shadow-lg hover:shadow-blue-300/40 dark:hover:shadow-blue-700/40 hover:ring-1 hover:ring-blue-200/40 dark:hover:ring-blue-500/40'
+                }`}
                 radius="lg"
               >
-                {loading ? "Testing..." : 
-                 selected ? (delay === -1 ? "Connected" : `${delay}ms`) :
-                 delay === -1 ? "Connect" : 
-                 delay === 0 ? "Timeout" : `${delay}ms`}
+                {loading ? "测试中" : 
+                 selected ? (delay === -1 ? "已连接" : `${delay}ms`) :
+                 delay === -1 ? "连接" : 
+                 delay === 0 ? "超时" : `${delay}ms`}
               </Button>
             </div>
           </div>

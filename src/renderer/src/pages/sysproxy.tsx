@@ -1,16 +1,13 @@
-import { Button, Input, Tab, Tabs, Avatar, Card, CardBody, Chip, Divider } from '@heroui/react'
+import { Button, Input, Avatar, Card, CardBody, Chip, Divider, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
 import SettingCard from '@renderer/components/base/base-setting-card'
-import SettingItem from '@renderer/components/base/base-setting-item'
 import VpnSwitch from '@renderer/components/base/vpn-switch'
 import PacEditorModal from '@renderer/components/sysproxy/pac-editor-modal'
 import ProxyItem from '@renderer/components/proxies/proxy-item'
 import { useAppConfig } from '@renderer/hooks/use-app-config'
 import { useGroups } from '@renderer/hooks/use-groups'
-import { useControledMihomoConfig } from '@renderer/hooks/use-controled-mihomo-config'
 import { platform } from '@renderer/utils/init'
 import { 
-  openUWPTool, 
   triggerSysProxy, 
   mihomoChangeProxy, 
   mihomoCloseAllConnections,
@@ -18,14 +15,16 @@ import {
   getImageDataURL
 } from '@renderer/utils/ipc'
 import { includesIgnoreCase } from '@renderer/utils/includes'
-import { Key, useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import React from 'react'
-import { MdDeleteForever, MdVpnKey, MdOutlineSpeed, MdSearch } from 'react-icons/md'
+import { MdVpnKey, MdOutlineSpeed, MdSearch } from 'react-icons/md'
 import { FaShieldAlt } from 'react-icons/fa'
 import { TbCircleLetterD } from 'react-icons/tb'
 import { RxLetterCaseCapitalize } from 'react-icons/rx'
 import { CgDetailsLess, CgDetailsMore } from 'react-icons/cg'
+import { Crown } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import '@renderer/components/base/vpn-switch.css'
 
 const defaultPacScript = `
@@ -74,9 +73,9 @@ const Sysproxy: React.FC = () => {
           ]
 
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const { appConfig, patchAppConfig } = useAppConfig()
   const { sysProxy } = appConfig || ({ sysProxy: { enable: false } } as IAppConfig)
-  const [changed, setChanged] = useState(false)
   const [values, originSetValues] = useState({
     enable: sysProxy.enable,
     host: sysProxy.host ?? '',
@@ -84,10 +83,11 @@ const Sysproxy: React.FC = () => {
     mode: sysProxy.mode ?? 'manual',
     pacScript: sysProxy.pacScript ?? defaultPacScript
   })
+  
+  // 会员过期检查相关状态
+  const [showExpirationModal, setShowExpirationModal] = useState(false)
 
   // Proxy group functionality
-  const { controledMihomoConfig } = useControledMihomoConfig()
-  const { mode: proxyMode = 'rule' } = controledMihomoConfig || {}
   const { groups: allGroups = [], mutate } = useGroups()
   const groups = allGroups.filter(group => group.type === 'Selector' && group.name !== 'GLOBAL')
   const {
@@ -98,7 +98,6 @@ const Sysproxy: React.FC = () => {
     delayTestConcurrency = 50
   } = appConfig || {}
   
-  const [cols, setCols] = useState(1)
   const [delaying, setDelaying] = useState(false)
   const [searchValue, setSearchValue] = useState('')
   
@@ -131,7 +130,6 @@ const Sysproxy: React.FC = () => {
 
   const setValues = (v: typeof values): void => {
     originSetValues(v)
-    setChanged(true)
   }
 
   const [openPacEditor, setOpenPacEditor] = useState(false)
@@ -181,30 +179,6 @@ const Sysproxy: React.FC = () => {
     }
   }, [group, filteredProxies, delayTestConcurrency, mutate])
 
-  const calcCols = useCallback((): number => {
-    if (proxyCols !== 'auto') {
-      // biome-ignore lint/style/useNumberNamespace: <explanation>
-      return parseInt(proxyCols)
-    }
-    if (window.matchMedia('(min-width: 1536px)').matches) return 5
-    if (window.matchMedia('(min-width: 1280px)').matches) return 4
-    if (window.matchMedia('(min-width: 1024px)').matches) return 3
-    return 2
-  }, [proxyCols])
-
-  useEffect(() => {
-    const handleResize = (): void => {
-      setCols(calcCols())
-    }
-
-    handleResize() // 初始化
-    window.addEventListener('resize', handleResize)
-    
-    return (): void => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [calcCols])
-
   // 处理图标加载
   useEffect(() => {
     if (
@@ -219,43 +193,45 @@ const Sysproxy: React.FC = () => {
     }
   }, [group, mutate])
 
-  const handleBypassChange = (value: string, index: number): void => {
-    const newBypass = [...values.bypass]
-    if (index === newBypass.length) {
-      if (value.trim() !== '') {
-        newBypass.push(value)
-      }
-    } else {
-      if (value.trim() === '') {
-        newBypass.splice(index, 1)
-      } else {
-        newBypass[index] = value
-      }
+  // 会员过期检查函数
+  const checkMembershipExpiration = (): boolean => {
+    try {
+      const savedProfile = sessionStorage.getItem('mihomo-party-user')
+      if (!savedProfile) return false
+      
+      const profile = JSON.parse(savedProfile)
+      if (!profile?.data?.expired_at) return false
+      
+      const currentTime = Date.now() / 1000
+      const isExpired = profile.data.expired_at <= currentTime
+      
+      // 添加调试信息
+      console.log('🔍 连接时会员过期检查:')
+      console.log('当前时间:', currentTime, new Date(currentTime * 1000).toLocaleString())
+      console.log('过期时间:', profile.data.expired_at, new Date(profile.data.expired_at * 1000).toLocaleString())
+      console.log('是否过期:', isExpired)
+      
+      return isExpired
+    } catch (error) {
+      console.error('检查会员状态失败:', error)
+      return false
     }
-    setValues({ ...values, bypass: newBypass })
   }
 
-  const onSave = async (): Promise<void> => {
-    setChanged(false)
-
-    // 保存当前的开关状态，以便在失败时恢复
-    const previousState = values.enable
-
-    try {
-      await patchAppConfig({ sysProxy: values })
-      await triggerSysProxy(true)
-
-      await patchAppConfig({ sysProxy: { enable: true } })
-    } catch (e) {
-      setValues({ ...values, enable: previousState })
-      setChanged(true)
-      alert(e)
-
-      await patchAppConfig({ sysProxy: { enable: false } })
-    }
+  // 处理购买跳转
+  const handlePurchase = (): void => {
+    setShowExpirationModal(false)
+    navigate('/package-purchase')
   }
 
   const onToggle = async (enable: boolean): Promise<void> => {
+    // 如果要开启连接，先检查会员是否过期
+    if (enable && checkMembershipExpiration()) {
+      console.log('✋ 会员已过期，阻止连接并显示弹窗')
+      setShowExpirationModal(true)
+      return
+    }
+
     const previousState = !enable
     
     try {
@@ -298,15 +274,67 @@ const Sysproxy: React.FC = () => {
           }}
         />
       )}
-      {/* VPN 状态展示区 */}
-      <SettingCard>
-        <div className="relative overflow-hidden">
-          {/* Background gradient */}
-          <div className={`absolute inset-0 transition-all duration-700 ${
-            values.enable 
-              ? 'bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-emerald-950/30 dark:via-green-950/30 dark:to-teal-950/30' 
-              : 'bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/30 dark:to-slate-900/30'
-          }`} />
+      
+      {/* 会员过期提示弹窗 */}
+      <Modal 
+        isOpen={showExpirationModal} 
+        onOpenChange={setShowExpirationModal}
+        backdrop="blur"
+        placement="center"
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center">
+                    <Crown className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                      {t('common.membership.expired')}
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      {t('common.membership.needPurchase')}
+                    </p>
+                  </div>
+                </div>
+              </ModalHeader>
+              <ModalBody>
+                <div className="space-y-4">
+                  <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                    <p className="text-sm text-amber-800 dark:text-amber-200">
+                      ⚠️ {t('common.membership.expiredMessage')}
+                    </p>
+                  </div>
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button color="default" variant="light" onPress={onClose}>
+                  {t('common.cancel')}
+                </Button>
+                <Button 
+                  color="primary" 
+                  onPress={handlePurchase}
+                  startContent={<Crown className="w-4 h-4" />}
+                >
+                  {t('common.membership.goPurchase')}
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+      {/* VPN 状态展示区 - 粘性定位 */}
+      <div className="sticky top-0 z-30 mx-2 mb-4">
+                <SettingCard>
+          <div className="relative overflow-hidden">
+            {/* Background gradient */}
+            <div className={`absolute inset-0 transition-all duration-700 ${
+              values.enable 
+                ? 'bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 dark:from-emerald-950/30 dark:via-green-950/30 dark:to-teal-950/30' 
+                : 'bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/30 dark:to-slate-900/30'
+            }`} />
           
           {/* Animated background particles */}
           {values.enable && (
@@ -381,24 +409,34 @@ const Sysproxy: React.FC = () => {
               </div>
               
               {/* VPN Switch */}
-              <div className="flex flex-col items-center space-y-3">
-                <VpnSwitch
-                  isSelected={values.enable}
-                  onValueChange={onToggle}
-                  size="lg"
-                />
-                <span className={`text-xs font-semibold transition-colors duration-300 ${
+              <div className={`flex flex-col items-center space-y-3 ${!values.enable ? 'animate-bounce-gentle' : ''}`}>
+                <div className={`relative ${!values.enable ? 'animate-pulse' : ''}`}>
+                  {/* 未连接时的环形指示器 */}
+                  {!values.enable && (
+                    <>
+                      <div className="absolute inset-0 rounded-full border-4 border-orange-400/30 animate-ping" />
+                      <div className="absolute inset-0 rounded-full border-2 border-red-400/50 animate-pulse" />
+                    </>
+                  )}
+                  <VpnSwitch
+                    isSelected={values.enable}
+                    onValueChange={onToggle}
+                    size="lg"
+                  />
+                </div>
+                <span className={`text-xs font-semibold transition-all duration-300 ${
                   values.enable 
                     ? 'text-emerald-600 dark:text-emerald-400' 
-                    : 'text-gray-500 dark:text-gray-400'
+                    : 'text-orange-600 dark:text-orange-400 animate-pulse font-bold'
                 }`}>
-                  {values.enable ? 'SECURE' : 'OFF'}
+                  {values.enable ? '安全' : '点击连接'}
                 </span>
               </div>
             </div>
           </div>
         </div>
       </SettingCard>
+      </div>
       
 
       {/* <SettingCard className="sysproxy-settings">
@@ -416,6 +454,7 @@ const Sysproxy: React.FC = () => {
         <SettingItem title={t('sysproxy.mode.title')} divider>
           <Tabs
             size="sm"
+            aria-label="系统代理模式"
             color="primary"
             selectedKey={values.mode}
             onSelectionChange={(key: Key) => setValues({ ...values, mode: key as SysProxyMode })}
@@ -485,20 +524,20 @@ const Sysproxy: React.FC = () => {
         )}
       </SettingCard> */}
 
-      {/* Proxy Group Section */}
+            {/* Proxy Group Section */}
       {group && (
         <SettingCard>
           <div className="w-full flex flex-col">
             {/* 代理组信息卡片 */}
-            <div className="mb-4">
-              <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-none shadow-md">
-                <CardBody className="p-4">
+            <div className="mb-6">
+              <Card className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/30 dark:via-indigo-900/30 dark:to-purple-900/30 border-none shadow-xl backdrop-blur-sm">
+                <CardBody className="p-6">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="flex items-center gap-4 min-w-0 flex-1">
                       {group.icon && (
                         <Avatar
-                          className="bg-transparent border-2 border-white/20 shadow-lg flex-shrink-0"
-                          size="md"
+                          className="bg-transparent border-3 border-white/30 shadow-2xl flex-shrink-0 ring-2 ring-white/20"
+                          size="lg"
                           radius="lg"
                           src={
                             group.icon.startsWith('<svg')
@@ -508,29 +547,29 @@ const Sysproxy: React.FC = () => {
                         />
                       )}
                       <div className="flex flex-col min-w-0 flex-1">
-                        <h2 className="text-xl font-bold text-foreground-900 mb-1 truncate">{group.name}</h2>
-                        <div className="flex items-center gap-2 mb-2 flex-wrap">
-                          <Chip size="sm" variant="flat" color="success" className="text-xs">
+                        <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mb-2 truncate">{group.name}</h2>
+                        <div className="flex items-center gap-3 mb-3 flex-wrap">
+                          <Chip size="md" variant="shadow" color="success" className="text-sm font-medium">
                             {group.type}
                           </Chip>
-                          <Chip size="sm" variant="flat" color="primary" className="text-xs">
-                            {filteredProxies.length} proxies
+                          <Chip size="md" variant="shadow" color="primary" className="text-sm font-medium">
+                            {filteredProxies.length} 个节点
                           </Chip>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-foreground-600">
-                          <span>Current:</span>
-                          <Chip size="sm" variant="bordered" color="secondary" className="text-xs font-medium">
+                        <div className="flex items-center gap-3 text-sm text-foreground-700 dark:text-foreground-300">
+                          <span className="font-medium">当前节点:</span>
+                          <Chip size="md" variant="bordered" color="secondary" className="text-sm font-semibold border-2">
                             {group.now}
                           </Chip>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-3 flex-shrink-0">
                       <Button
                         size="sm"
                         isIconOnly
                         variant="light"
-                        className="app-nodrag"
+                        className="app-nodrag hover:bg-blue-100 dark:hover:bg-blue-900/30"
                         onPress={() => {
                           patchAppConfig({
                             proxyDisplayOrder:
@@ -543,18 +582,18 @@ const Sysproxy: React.FC = () => {
                         }}
                       >
                         {proxyDisplayOrder === 'default' ? (
-                          <TbCircleLetterD className="text-lg" title={t('proxies.order.default')} />
+                          <TbCircleLetterD className="text-lg text-blue-600 dark:text-blue-400" title={t('proxies.order.default')} />
                         ) : proxyDisplayOrder === 'delay' ? (
-                          <MdOutlineSpeed className="text-lg" title={t('proxies.order.delay')} />
+                          <MdOutlineSpeed className="text-lg text-blue-600 dark:text-blue-400" title={t('proxies.order.delay')} />
                         ) : (
-                          <RxLetterCaseCapitalize className="text-lg" title={t('proxies.order.name')} />
+                          <RxLetterCaseCapitalize className="text-lg text-blue-600 dark:text-blue-400" title={t('proxies.order.name')} />
                         )}
                       </Button>
                       <Button
                         size="sm"
                         isIconOnly
                         variant="light"
-                        className="app-nodrag"
+                        className="app-nodrag hover:bg-blue-100 dark:hover:bg-blue-900/30"
                         onPress={() => {
                           patchAppConfig({
                             proxyDisplayMode: proxyDisplayMode === 'simple' ? 'full' : 'simple'
@@ -562,21 +601,21 @@ const Sysproxy: React.FC = () => {
                         }}
                       >
                         {proxyDisplayMode === 'full' ? (
-                          <CgDetailsMore className="text-lg" title={t('proxies.mode.full')} />
+                          <CgDetailsMore className="text-lg text-blue-600 dark:text-blue-400" title={t('proxies.mode.full')} />
                         ) : (
-                          <CgDetailsLess className="text-lg" title={t('proxies.mode.simple')} />
+                          <CgDetailsLess className="text-lg text-blue-600 dark:text-blue-400" title={t('proxies.mode.simple')} />
                         )}
                       </Button>
                       <Button
-                        size="sm"
-                        variant="flat"
+                        size="lg"
+                        variant="shadow"
                         color="primary"
                         isLoading={delaying}
                         onPress={onGroupDelay}
-                        startContent={!delaying && <MdOutlineSpeed className="text-lg" />}
-                        className="font-medium"
+                        startContent={!delaying && <MdOutlineSpeed className="text-xl" />}
+                        className="font-semibold px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transform hover:scale-105 transition-all duration-200"
                       >
-                        {delaying ? 'Testing...' : 'Speed Test'}
+                        {delaying ? '测试中...' : '全部测速'}
                       </Button>
                     </div>
                   </div>
@@ -585,79 +624,85 @@ const Sysproxy: React.FC = () => {
             </div>
 
             {/* 搜索栏和工具栏 */}
-            <div className="mb-3">
-              <div className="flex gap-3 items-center">
+            <div className="mb-4">
+              <div className="flex gap-4 items-center">
                 <Input
                   placeholder={t('proxies.search.placeholder')}
                   value={searchValue}
                   onValueChange={setSearchValue}
-                  startContent={<MdSearch className="text-foreground-400" />}
+                  startContent={<MdSearch className="text-foreground-400 text-lg" />}
                   variant="bordered"
-                  size="md"
+                  size="lg"
                   className="flex-1"
                   classNames={{
-                    inputWrapper: "border hover:border-primary-300 focus-within:border-primary-500"
+                    inputWrapper: "border-2 hover:border-primary-400 focus-within:border-primary-600 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm"
                   }}
                 />
-                <div className="flex items-center gap-1 text-sm text-foreground-500 flex-shrink-0">
-                  <span>Showing</span>
-                  <Chip size="sm" variant="flat" color="default">
+                <div className="flex items-center gap-2 text-sm text-foreground-600 dark:text-foreground-400 flex-shrink-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-lg px-3 py-2">
+                  <span className="font-medium">显示</span>
+                  <Chip size="sm" variant="shadow" color="primary" className="font-bold">
                     {filteredProxies.length}
                   </Chip>
-                  <span>of</span>
-                  <Chip size="sm" variant="flat" color="default">
+                  <span>/</span>
+                  <Chip size="sm" variant="shadow" color="default" className="font-bold">
                     {group.all.length}
                   </Chip>
                 </div>
               </div>
             </div>
+              <Divider className="mb-4 bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent h-px" />
 
-            <Divider className="mb-3" />
-
-            {/* 代理列表 */}
-            <div className="overflow-y-auto max-h-[400px]">
-              <div
-                className={`grid gap-3 w-full ${
-                  proxyCols === 'auto' 
-                    ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
-                    : ''
-                }`}
-                style={
-                  proxyCols !== 'auto'
-                    ? { gridTemplateColumns: `repeat(${proxyCols}, minmax(0, 1fr))` }
-                    : {}
-                }
-              >
-                {filteredProxies.map((proxy) => (
-                  <div key={proxy.name} className="w-full">
-                    <ProxyItem
-                      mutateProxies={mutate}
-                      onProxyDelay={onProxyDelay}
-                      onSelect={onChangeProxy}
-                      proxy={proxy}
-                      group={group}
-                      proxyDisplayMode={proxyDisplayMode}
-                      selected={proxy.name === group.now}
-                    />
-                  </div>
-                ))}
-              </div>
-              
-              {filteredProxies.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-32 text-center">
-                  <MdSearch className="text-6xl text-foreground-300 mb-4" />
-                  <h3 className="text-lg font-medium text-foreground-500 mb-2">No proxies found</h3>
-                  <p className="text-sm text-foreground-400">
-                    Try adjusting your search terms or check your proxy configuration
-                  </p>
+              {/* 代理列表 - 移除固定高度限制 */}
+              <div className="pb-4 w-full overflow-hidden">
+                <div
+                  className={`grid gap-4 w-full max-w-full ${
+                    proxyCols === 'auto' 
+                      ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5' 
+                      : ''
+                  }`}
+                  style={
+                    proxyCols !== 'auto'
+                      ? { 
+                          gridTemplateColumns: `repeat(${proxyCols}, minmax(0, 1fr))`,
+                          width: '100%',
+                          overflow: 'hidden'
+                        }
+                      : {
+                          width: '100%',
+                          overflow: 'hidden'
+                        }
+                  }
+                >
+                  {filteredProxies.map((proxy) => (
+                    <div key={proxy.name} className="w-full">
+                      <ProxyItem
+                        mutateProxies={mutate}
+                        onProxyDelay={onProxyDelay}
+                        onSelect={onChangeProxy}
+                        proxy={proxy}
+                        group={group}
+                        proxyDisplayMode={proxyDisplayMode}
+                        selected={proxy.name === group.now}
+                      />
+                    </div>
+                  ))}
                 </div>
-              )}
+                
+                {filteredProxies.length === 0 && (
+                  <div className="flex flex-col items-center justify-center h-64 text-center">
+                    <MdSearch className="text-8xl text-foreground-300 mb-6 animate-pulse" />
+                    <h3 className="text-xl font-bold text-foreground-600 dark:text-foreground-400 mb-3">未找到匹配的节点</h3>
+                    <p className="text-sm text-foreground-500 max-w-md">
+                      请尝试调整搜索条件或检查代理配置
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </SettingCard>
-      )}
-    </BasePage>
-  )
-}
+          </SettingCard>
+        )}
+      </BasePage>
+    )
+  }
 
 export default Sysproxy

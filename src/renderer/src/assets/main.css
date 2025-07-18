@@ -209,6 +209,232 @@
   display: none;
 }
 
+.no-scrollbar {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* 节点卡片悬停效果 */
+@keyframes card-hover {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  100% {
+    transform: scale(1.02);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+}
+
+.proxy-card-hover {
+  animation: card-hover 0.3s ease-out forwards;
+}
+
+/* 渐变边框动画 */
+@keyframes gradient-border {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient-border {
+  background: linear-gradient(45deg, #3b82f6, #8b5cf6, #06b6d4, #10b981);
+  background-size: 400% 400%;
+  animation: gradient-border 3s ease infinite;
+}
+
+/* 系统代理页面动画 */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.6;
+  }
+  33% {
+    transform: translate(10px, -10px) scale(1.1);
+    opacity: 0.8;
+  }
+  66% {
+    transform: translate(-5px, 5px) scale(0.9);
+    opacity: 0.4;
+  }
+}
+
+@keyframes float-medium {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(-8px, -12px) rotate(180deg);
+    opacity: 1;
+  }
+}
+
+@keyframes float-fast {
+  0%, 100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+    opacity: 0.5;
+  }
+  25% {
+    transform: translate(8px, -8px) scale(1.2) rotate(90deg);
+    opacity: 0.8;
+  }
+  75% {
+    transform: translate(-6px, 6px) scale(0.8) rotate(270deg);
+    opacity: 0.3;
+  }
+}
+
+.animate-float-slow {
+  animation: float-slow 4s ease-in-out infinite;
+}
+
+.animate-float-medium {
+  animation: float-medium 3s ease-in-out infinite;
+}
+
+.animate-float-fast {
+  animation: float-fast 2s ease-in-out infinite;
+}
+
+/* 防止横向滚动条样式 */
+.proxy-grid-container {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.proxy-card {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.proxy-card * {
+  box-sizing: border-box;
+}
+
+/* 确保文本不会超出容器 */
+.proxy-title {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 确保按钮不会超出容器 */
+.proxy-button {
+  max-width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+/* 代理卡片增强动画效果 */
+@keyframes card-selected {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+  100% {
+    transform: scale(1.02);
+    box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(99, 102, 241, 0.1);
+  }
+}
+
+@keyframes button-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  }
+}
+
+@keyframes status-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+  }
+}
+
+.proxy-card-selected {
+  animation: card-selected 0.3s ease-out forwards;
+}
+
+.proxy-button-selected {
+  animation: button-pulse 2s ease-in-out infinite;
+}
+
+.proxy-status-online {
+  animation: status-glow 2s ease-in-out infinite;
+}
+
+/* 卡片hover效果增强 */
+.proxy-card:hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 选中状态增强动画 */
+@keyframes selected-highlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
+    border-color: rgba(59, 130, 246, 0.8);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.3);
+    border-color: rgba(59, 130, 246, 1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.6);
+    border-color: rgba(59, 130, 246, 0.8);
+  }
+}
+
+/* Hover状态发光效果 */
+@keyframes hover-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  }
+}
+
+/* 按钮选中状态呼吸效果 */
+@keyframes button-breathe {
+  0%, 100% {
+    transform: scale(1.02);
+    box-shadow: 0 8px 25px -8px rgba(59, 130, 246, 0.6);
+  }
+  50% {
+    transform: scale(1.04);
+    box-shadow: 0 12px 35px -8px rgba(59, 130, 246, 0.8);
+  }
+}
+
+/* 应用动画类 */
+.card-selected {
+  animation: selected-highlight 2s ease-in-out infinite;
+}
+
+.card-hover-glow:hover {
+  animation: hover-glow 1.5s ease-in-out infinite;
+}
+
+.button-selected-breathe {
+  animation: button-breathe 2s ease-in-out infinite;
+}
+
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -266,4 +492,97 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+/* 侧边栏溢出控制 - 防止横向滚动条 */
+.side {
+  overflow-x: hidden !important;
+  max-width: 100% !important;
+}
+
+.side * {
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+.side .no-scrollbar {
+  overflow-x: hidden !important;
+}
+
+/* 确保所有侧边栏组件不会产生横向滚动 */
+.sidebar-nav-item,
+.sidebar-section,
+.sidebar-card {
+  overflow: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* 侧边栏按钮和文本溢出控制 */
+.side button {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 确保sidebar header在macOS上不会溢出 */
+.side .app-drag {
+  overflow: hidden;
+  max-width: 100%;
+}
+
+/* 系统代理未连接时的吸引注意力动画 */
+@keyframes bounce-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.05);
+  }
+}
+
+@keyframes attention-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(251, 146, 60, 0.4), 0 0 40px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(251, 146, 60, 0.7), 0 0 60px rgba(239, 68, 68, 0.5);
+  }
+}
+
+@keyframes warning-pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 2s ease-in-out infinite;
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 1.5s ease-in-out infinite;
+}
+
+.animate-attention-glow {
+  animation: attention-glow 2s ease-in-out infinite;
+}
+
+.animate-warning-pulse {
+  animation: warning-pulse 1s ease-in-out infinite;
 }

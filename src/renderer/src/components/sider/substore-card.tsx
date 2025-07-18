@@ -31,9 +31,14 @@ const SubStoreCard: React.FC<Props> = (props) => {
   })
   const transform = tf ? { x: tf.x, y: tf.y, scaleX: 1, scaleY: 1 } : null
 
+  // 如果设置为隐藏或sub-store功能被禁用，则不显示
+  if (!useSubStore || substoreCardStatus === 'hidden') {
+    return null
+  }
+
   if (iconOnly) {
     return (
-      <div className={`${substoreCardStatus} ${!useSubStore ? 'hidden' : ''} flex justify-center`}>
+      <div className={`${substoreCardStatus} flex justify-center`}>
         <Tooltip content={t('sider.cards.substore')} placement="right">
           <Button
             size="sm"
@@ -59,7 +64,7 @@ const SubStoreCard: React.FC<Props> = (props) => {
         transition,
         zIndex: isDragging ? 'calc(infinity)' : undefined
       }}
-      className={`${substoreCardStatus} ${!useSubStore ? 'hidden' : ''} substore-card`}
+      className={`${substoreCardStatus} substore-card`}
     >
       <Card
         ref={setNodeRef}

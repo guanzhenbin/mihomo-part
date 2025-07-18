@@ -27,7 +27,7 @@ const ProfileCenterCard: React.FC<Props> = ({ iconOnly = false }) => {
     transition,
     isDragging
   } = useSortable({
-    id: 'profileCenter'
+    id: 'profilecenter'
   })
   
   const transform = tf ? { x: tf.x, y: tf.y, scaleX: 1, scaleY: 1 } : null

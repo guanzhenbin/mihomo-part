@@ -92,7 +92,7 @@ const routes = [
   },
   {
     path: '/',
-    element: <Navigate to="/proxies" />
+    element: <Navigate to="/sysproxy" />
   }
 ]
 

@@ -1,25 +1,47 @@
 import { useEffect, useState } from 'react'
-import { Card, CardBody, Chip, Progress, Button, Avatar } from '@heroui/react'
+import { Card, CardBody, Chip, Progress, Button, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
-import { UserProfile } from '@renderer/services/api'
+import { UserProfile, apiService } from '@renderer/services/api'
 import { useAuth } from '@renderer/hooks/use-auth'
-import { User, Mail, Calendar, Package, Download, Upload, Clock, Shield, Copy, ExternalLink, Crown, Zap, TrendingUp, Server, Activity, Wifi, Star, Globe, Sparkles, CircuitBoard, Layers, LogOut } from 'lucide-react'
+import { User, Mail, Calendar, Package, Download, Upload, Shield, Copy, Crown, Zap, TrendingUp, Server, Activity, Wifi, Star, Globe, Sparkles, CircuitBoard, Layers, LogOut } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 
 const ProfileCenterPage: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [showExpirationModal, setShowExpirationModal] = useState(false)
   const { logout } = useAuth()
+  const navigate = useNavigate()
+  const { t } = useTranslation()
 
   useEffect(() => {
-    const loadUserProfile = () => {
+    const loadUserProfile = async (): Promise<void> => {
       try {
+        // 首先尝试从sessionStorage加载缓存数据
         const savedProfile = sessionStorage.getItem('mihomo-party-user')
         if (savedProfile) {
           const profile = JSON.parse(savedProfile)
           setUserProfile(profile)
+          console.log('📦 从缓存加载用户数据:', profile)
+        }
+
+        // 然后从API获取最新数据
+        console.log('🔄 正在获取最新用户数据...')
+        const result = await apiService.getUserProfile()
+        
+        if (result.success && result.data) {
+          console.log('✅ 获取到最新用户数据:', result.data)
+          setUserProfile(result.data)
+          // 更新sessionStorage中的缓存
+          sessionStorage.setItem('mihomo-party-user', JSON.stringify(result.data))
+          console.log('💾 已更新缓存数据')
+        } else {
+          console.error('❌ 获取用户数据失败:', result)
         }
       } catch (error) {
-        console.error('Failed to load user profile:', error)
+        console.error('❌ 加载用户数据时出错:', error)
+        // 如果API失败，至少显示缓存数据
       } finally {
         setIsLoading(false)
       }
@@ -28,7 +50,7 @@ const ProfileCenterPage: React.FC = () => {
     loadUserProfile()
   }, [])
 
-  const formatBytes = (bytes: number) => {
+  const formatBytes = (bytes: number): string => {
     if (bytes === 0) return '0 B'
     const k = 1024
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
@@ -36,20 +58,43 @@ const ProfileCenterPage: React.FC = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString('zh-CN', {
+  const formatDate = (timestamp: number): string => {
+    // 自动检测时间戳格式
+    let date: Date
+    
+    // 如果时间戳小于某个值，认为是秒时间戳，需要乘以1000
+    if (timestamp < 10000000000) {
+      date = new Date(timestamp * 1000)
+    } else {
+      // 否则认为是毫秒时间戳
+      date = new Date(timestamp)
+    }
+    
+    // 检查日期是否有效
+    if (isNaN(date.getTime())) {
+      console.error('❌ 无效的时间戳:', timestamp)
+      return '时间格式错误'
+    }
+    
+    return date.toLocaleString('zh-CN', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
     })
   }
 
-  const calculateUsagePercentage = (used: number, total: number) => {
+
+
+  const calculateUsagePercentage = (used: number, total: number): number => {
     if (total === 0) return 0
     return Math.min((used / total) * 100, 100)
   }
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (text: string): Promise<void> => {
     try {
       await navigator.clipboard.writeText(text)
     } catch (error) {
@@ -57,7 +102,28 @@ const ProfileCenterPage: React.FC = () => {
     }
   }
 
-  const handleLogout = () => {
+  const handleCopyLinkClick = (): void => {
+    if (!userProfile?.data) return
+    
+    const { data } = userProfile
+    const currentTime = Date.now() / 1000
+    const isExpired = data.expired_at <= currentTime
+    
+    if (isExpired) {
+      // 会员已过期，显示提示弹窗
+      setShowExpirationModal(true)
+    } else {
+      // 会员有效，直接复制链接
+      copyToClipboard(data.subscribe_url)
+    }
+  }
+
+  const handlePurchase = (): void => {
+    setShowExpirationModal(false)
+    navigate('/package-purchase')
+  }
+
+  const handleLogout = (): void => {
     // 清除sessionStorage中的登录信息
     sessionStorage.removeItem('mihomo-party-token')
     sessionStorage.removeItem('mihomo-party-user')
@@ -71,15 +137,20 @@ const ProfileCenterPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <BasePage title="个人中心" isLoading={true}>
-        <div />
+      <BasePage title="个人中心">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-lg text-slate-600 dark:text-slate-400">加载中...</p>
+          </div>
+        </div>
       </BasePage>
     )
   }
 
   if (!userProfile) {
     return (
-      <BasePage title="个人中心" isLoading={false}>
+      <BasePage title="个人中心">
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
           <div className="max-w-4xl mx-auto px-6 py-16">
             <div className="text-center">
@@ -98,24 +169,32 @@ const ProfileCenterPage: React.FC = () => {
   const { data } = userProfile
   const totalUsage = data.u + data.d
   const usagePercentage = calculateUsagePercentage(totalUsage, data.transfer_enable)
-  const isExpired = data.expired_at <= Date.now() / 1000
-  const remainingDays = Math.ceil((data.expired_at * 1000 - Date.now()) / (1000 * 60 * 60 * 24))
+  
+
+  
+  // 修正时间计算逻辑
+  const currentTime = Date.now() / 1000 // 当前时间秒时间戳
+  const isExpired = data.expired_at <= currentTime
+  
+  // 计算剩余天数，确保不为负数
+  const timeDiff = data.expired_at - currentTime // 相差秒数
+  const remainingDays = Math.max(0, Math.ceil(timeDiff / (24 * 60 * 60))) // 转换为天数并向上取整
 
   return (
-    <BasePage title="" isLoading={false}>
+    <BasePage title="">
       <div className="min-h-screen relative overflow-hidden">
         {/* Enhanced Animated Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
           {/* Floating particles */}
-          <div className="absolute top-20 left-20 w-2 h-2 bg-blue-400/30 rounded-full animate-ping" style={{animationDelay: '0s'}}></div>
-          <div className="absolute top-40 right-32 w-1 h-1 bg-purple-400/40 rounded-full animate-pulse" style={{animationDelay: '2s'}}></div>
-          <div className="absolute bottom-40 left-1/4 w-3 h-3 bg-indigo-400/20 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
-          <div className="absolute top-1/3 right-20 w-2 h-2 bg-cyan-400/30 rounded-full animate-ping" style={{animationDelay: '3s'}}></div>
-          <div className="absolute bottom-20 right-1/3 w-1 h-1 bg-pink-400/40 rounded-full animate-pulse" style={{animationDelay: '4s'}}></div>
+          <div className="absolute top-20 left-20 w-2 h-2 bg-blue-400/30 rounded-full animate-ping" style={{animationDelay: '0s'}} aria-hidden="true"></div>
+          <div className="absolute top-40 right-32 w-1 h-1 bg-purple-400/40 rounded-full animate-pulse" style={{animationDelay: '2s'}} aria-hidden="true"></div>
+          <div className="absolute bottom-40 left-1/4 w-3 h-3 bg-indigo-400/20 rounded-full animate-bounce" style={{animationDelay: '1s'}} aria-hidden="true"></div>
+          <div className="absolute top-1/3 right-20 w-2 h-2 bg-cyan-400/30 rounded-full animate-ping" style={{animationDelay: '3s'}} aria-hidden="true"></div>
+          <div className="absolute bottom-20 right-1/3 w-1 h-1 bg-pink-400/40 rounded-full animate-pulse" style={{animationDelay: '4s'}} aria-hidden="true"></div>
           
           {/* Gradient orbs */}
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-purple-600/10 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-br from-indigo-400/10 to-pink-600/10 rounded-full blur-3xl animate-float-reverse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400/10 to-purple-600/10 rounded-full blur-3xl animate-float" aria-hidden="true"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-gradient-to-br from-indigo-400/10 to-pink-600/10 rounded-full blur-3xl animate-float-reverse" aria-hidden="true"></div>
         </div>
         
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-16">
@@ -125,10 +204,10 @@ const ProfileCenterPage: React.FC = () => {
               <div className="relative group">
                 <div className="w-32 h-32 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-3xl flex items-center justify-center shadow-2xl transform transition-all duration-700 hover:scale-110 hover:rotate-3 animate-float">
                   <div className="relative">
-                    <User className="w-16 h-16 text-white" />
-                    <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full border-2 border-white flex items-center justify-center">
-                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                    </div>
+                    <User className="w-16 h-16 text-white" aria-hidden="true" />
+                                          <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full border-2 border-white flex items-center justify-center" aria-hidden="true">
+                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                      </div>
                   </div>
                 </div>
                 <div className="absolute -inset-2 bg-gradient-to-br from-blue-400/20 to-purple-600/20 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -144,8 +223,8 @@ const ProfileCenterPage: React.FC = () => {
                   size="lg"
                   variant="flat"
                   color="danger"
-                  startContent={<LogOut className="w-5 h-5" />}
-                  onClick={handleLogout}
+                                      startContent={<LogOut className="w-5 h-5" aria-hidden="true" />}
+                  onPress={handleLogout}
                   className="font-semibold px-6 py-3 bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border border-red-200 dark:border-red-700 hover:shadow-lg transition-all duration-300 animate-fade-in-up"
                   style={{animationDelay: '0.1s'}}
                 >
@@ -172,7 +251,7 @@ const ProfileCenterPage: React.FC = () => {
                   <div className="flex items-center gap-5 mb-6">
                     <div className="relative">
                       <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-green-600 rounded-2xl flex items-center justify-center shadow-xl transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                        <Shield className="w-8 h-8 text-white" />
+                        <Shield className="w-8 h-8 text-white" aria-hidden="true" />
                       </div>
                       <div className="absolute -inset-1 bg-gradient-to-br from-emerald-400/20 to-green-600/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
@@ -183,6 +262,9 @@ const ProfileCenterPage: React.FC = () => {
                       </h3>
                       <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">
                         {isExpired ? '请续费以继续使用' : `剩余 ${remainingDays} 天`}
+                      </p>
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                        过期时间：{formatDate(data.expired_at)}
                       </p>
                     </div>
                   </div>
@@ -201,7 +283,7 @@ const ProfileCenterPage: React.FC = () => {
                   <div className="flex items-center gap-5 mb-6">
                     <div className="relative">
                       <div className="w-16 h-16 bg-gradient-to-br from-blue-400 to-cyan-600 rounded-2xl flex items-center justify-center shadow-xl transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                        <TrendingUp className="w-8 h-8 text-white" />
+                        <TrendingUp className="w-8 h-8 text-white" aria-hidden="true" />
                       </div>
                       <div className="absolute -inset-1 bg-gradient-to-br from-blue-400/20 to-cyan-600/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
@@ -215,6 +297,7 @@ const ProfileCenterPage: React.FC = () => {
                   <div className="space-y-3">
                     <Progress
                       value={usagePercentage}
+                      aria-label="流量使用率"
                       color={usagePercentage > 90 ? 'danger' : usagePercentage > 70 ? 'warning' : 'success'}
                       size="lg"
                       className="w-full"
@@ -243,7 +326,7 @@ const ProfileCenterPage: React.FC = () => {
                   <div className="flex items-center gap-5 mb-6">
                     <div className="relative">
                       <div className="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-600 rounded-2xl flex items-center justify-center shadow-xl transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                        <Globe className="w-8 h-8 text-white" />
+                        <Globe className="w-8 h-8 text-white" aria-hidden="true" />
                       </div>
                       <div className="absolute -inset-1 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
@@ -275,7 +358,7 @@ const ProfileCenterPage: React.FC = () => {
                   <div className="flex items-center gap-5 mb-6">
                     <div className="relative">
                       <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-600 rounded-2xl flex items-center justify-center shadow-xl transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                        <Crown className="w-8 h-8 text-white" />
+                        <Crown className="w-8 h-8 text-white" aria-hidden="true" />
                       </div>
                       <div className="absolute -inset-1 bg-gradient-to-br from-amber-400/20 to-orange-600/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     </div>
@@ -290,7 +373,7 @@ const ProfileCenterPage: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 text-amber-500" />
+                                            <Star className="w-4 h-4 text-amber-500" aria-hidden="true" />
                     <span className="text-sm font-medium text-amber-600 dark:text-amber-400">高级套餐</span>
                   </div>
                 </div>
@@ -309,7 +392,7 @@ const ProfileCenterPage: React.FC = () => {
                     <div className="flex items-center gap-6 mb-10">
                       <div className="relative">
                         <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/50 dark:to-indigo-900/50 rounded-3xl flex items-center justify-center shadow-xl transform transition-transform duration-300 group-hover:scale-110">
-                          <Activity className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                          <Activity className="w-8 h-8 text-blue-600 dark:text-blue-400" aria-hidden="true" />
                         </div>
                         <div className="absolute -inset-1 bg-gradient-to-br from-blue-400/20 to-indigo-600/20 rounded-3xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       </div>
@@ -325,7 +408,7 @@ const ProfileCenterPage: React.FC = () => {
                         <div className="space-y-3">
                           <div className="flex items-center gap-3">
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white">总使用量</h3>
-                            <CircuitBoard className="w-5 h-5 text-blue-500" />
+                            <CircuitBoard className="w-5 h-5 text-blue-500" aria-hidden="true" />
                           </div>
                           <div className="space-y-2">
                             <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
@@ -354,6 +437,7 @@ const ProfileCenterPage: React.FC = () => {
                       <div className="space-y-4">
                         <Progress
                           value={usagePercentage}
+                          aria-label="流量使用率"
                           color={usagePercentage > 90 ? 'danger' : usagePercentage > 70 ? 'warning' : 'success'}
                           size="lg"
                           className="w-full h-4"
@@ -364,11 +448,11 @@ const ProfileCenterPage: React.FC = () => {
                         />
                         <div className="flex justify-between text-sm text-slate-600 dark:text-slate-400 font-medium">
                           <span className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <div className="w-2 h-2 bg-green-500 rounded-full" aria-hidden="true"></div>
                             剩余: {formatBytes(data.transfer_enable - totalUsage)}
                           </span>
                           <span className="flex items-center gap-2">
-                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <div className="w-2 h-2 bg-blue-500 rounded-full" aria-hidden="true"></div>
                             {(100 - usagePercentage).toFixed(1)}% 可用
                           </span>
                         </div>
@@ -381,7 +465,7 @@ const ProfileCenterPage: React.FC = () => {
                         <div className="flex items-center gap-5 mb-6">
                           <div className="relative">
                             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                              <Download className="w-8 h-8 text-white" />
+                              <Download className="w-8 h-8 text-white" aria-hidden="true" />
                             </div>
                             <div className="absolute -inset-1 bg-gradient-to-br from-green-400/20 to-emerald-600/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           </div>
@@ -412,7 +496,7 @@ const ProfileCenterPage: React.FC = () => {
                         <div className="flex items-center gap-5 mb-6">
                           <div className="relative">
                             <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-xl flex items-center justify-center transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
-                              <Upload className="w-8 h-8 text-white" />
+                              <Upload className="w-8 h-8 text-white" aria-hidden="true" />
                             </div>
                             <div className="absolute -inset-1 bg-gradient-to-br from-blue-400/20 to-cyan-600/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                           </div>
@@ -454,7 +538,7 @@ const ProfileCenterPage: React.FC = () => {
                     <div className="flex items-center gap-6 mb-8">
                       <div className="relative">
                         <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/50 dark:to-pink-900/50 rounded-3xl flex items-center justify-center shadow-xl transform transition-transform duration-300 group-hover:scale-110">
-                          <Crown className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+                          <Crown className="w-8 h-8 text-purple-600 dark:text-purple-400" aria-hidden="true" />
                         </div>
                         <div className="absolute -inset-1 bg-gradient-to-br from-purple-400/20 to-pink-600/20 rounded-3xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       </div>
@@ -470,9 +554,9 @@ const ProfileCenterPage: React.FC = () => {
                           {data.plan.name}
                         </h3>
                         <div className="flex items-center justify-center gap-3">
-                          <Star className="w-6 h-6 text-amber-500" />
+                          <Star className="w-6 h-6 text-amber-500" aria-hidden="true" />
                           <span className="text-base font-semibold text-purple-700 dark:text-purple-300 tracking-wide">高级套餐</span>
-                          <Star className="w-6 h-6 text-amber-500" />
+                          <Star className="w-6 h-6 text-amber-500" aria-hidden="true" />
                         </div>
                       </div>
                       <div className="text-center space-y-2">
@@ -487,7 +571,7 @@ const ProfileCenterPage: React.FC = () => {
                       <div className="flex items-center justify-between py-4 px-6 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-2xl border border-amber-200/50 dark:border-amber-800/30 shadow-sm hover:shadow-md transition-shadow duration-300">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-                            <Zap className="w-5 h-5 text-white" />
+                            <Zap className="w-5 h-5 text-white" aria-hidden="true" />
                           </div>
                           <span className="font-semibold text-slate-700 dark:text-slate-300 text-lg">带宽限制</span>
                         </div>
@@ -499,7 +583,7 @@ const ProfileCenterPage: React.FC = () => {
                       <div className="flex items-center justify-between py-4 px-6 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-2xl border border-blue-200/50 dark:border-blue-800/30 shadow-sm hover:shadow-md transition-shadow duration-300">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-                            <Package className="w-5 h-5 text-white" />
+                            <Package className="w-5 h-5 text-white" aria-hidden="true" />
                           </div>
                           <span className="font-semibold text-slate-700 dark:text-slate-300 text-lg">月流量</span>
                         </div>
@@ -511,7 +595,7 @@ const ProfileCenterPage: React.FC = () => {
                       <div className="flex items-center justify-between py-4 px-6 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-200/50 dark:border-green-800/30 shadow-sm hover:shadow-md transition-shadow duration-300">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
-                            <Calendar className="w-5 h-5 text-white" />
+                            <Calendar className="w-5 h-5 text-white" aria-hidden="true" />
                           </div>
                           <span className="font-semibold text-slate-700 dark:text-slate-300 text-lg">到期时间</span>
                         </div>
@@ -532,7 +616,7 @@ const ProfileCenterPage: React.FC = () => {
                     <div className="flex items-center gap-6 mb-8">
                       <div className="relative">
                         <div className="w-16 h-16 bg-gradient-to-br from-cyan-100 to-blue-100 dark:from-cyan-900/50 dark:to-blue-900/50 rounded-3xl flex items-center justify-center shadow-xl transform transition-transform duration-300 group-hover:scale-110">
-                          <Wifi className="w-8 h-8 text-cyan-600 dark:text-cyan-400" />
+                          <Wifi className="w-8 h-8 text-cyan-600 dark:text-cyan-400" aria-hidden="true" />
                         </div>
                         <div className="absolute -inset-1 bg-gradient-to-br from-cyan-400/20 to-blue-600/20 rounded-3xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       </div>
@@ -543,18 +627,18 @@ const ProfileCenterPage: React.FC = () => {
                     </div>
 
                     <div className="space-y-8">
-                      <div>
+                      {/* <div>
                         <div className="flex items-center justify-between mb-6">
                           <div className="flex items-center gap-3">
-                            <Layers className="w-5 h-5 text-cyan-500" />
+                            <Layers className="w-5 h-5 text-cyan-500" aria-hidden="true" />
                             <label className="font-bold text-slate-700 dark:text-slate-300 text-lg">订阅链接</label>
                           </div>
                           <Button
                             size="md"
                             variant="flat"
                             color="primary"
-                            startContent={<Copy className="w-5 h-5" />}
-                            onClick={() => copyToClipboard(data.subscribe_url)}
+                            startContent={<Copy className="w-5 h-5" aria-hidden="true" />}
+                            onPress={handleCopyLinkClick}
                             className="font-semibold px-6 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200 dark:border-blue-700 hover:shadow-lg transition-all duration-300"
                           >
                             复制链接
@@ -565,20 +649,20 @@ const ProfileCenterPage: React.FC = () => {
                             {data.subscribe_url}
                           </code>
                         </div>
-                      </div>
+                      </div> */}
 
                       <div>
                         <div className="flex items-center justify-between mb-6">
                           <div className="flex items-center gap-3">
-                            <Server className="w-5 h-5 text-purple-500" />
+                            <Server className="w-5 h-5 text-purple-500" aria-hidden="true" />
                             <label className="font-bold text-slate-700 dark:text-slate-300 text-lg">用户 UUID</label>
                           </div>
                           <Button
                             size="md"
                             variant="flat"
                             color="primary"
-                            startContent={<Copy className="w-5 h-5" />}
-                            onClick={() => copyToClipboard(data.uuid)}
+                            startContent={<Copy className="w-5 h-5" aria-hidden="true" />}
+                            onPress={() => copyToClipboard(data.uuid)}
                             className="font-semibold px-6 py-3 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-700 hover:shadow-lg transition-all duration-300"
                           >
                             复制 UUID
@@ -594,11 +678,11 @@ const ProfileCenterPage: React.FC = () => {
                       <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-blue-100 dark:from-blue-900/20 dark:via-indigo-900/30 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200/50 dark:border-blue-800/30 shadow-lg">
                         <div className="flex items-center gap-5">
                           <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                            <Mail className="w-6 h-6 text-white" />
+                            <Mail className="w-6 h-6 text-white" aria-hidden="true" />
                           </div>
                           <div>
-                            <h4 className="font-bold text-blue-900 dark:text-blue-100 text-lg mb-1">注册邮箱</h4>
-                            <p className="text-base text-blue-700 dark:text-blue-300 font-medium">{data.email}</p>
+                            <h4 className="font-bold text-blue-900 dark:text-blue-100 text-lg mb-1">注册账号</h4>
+                            <p className="text-base text-blue-700 dark:text-blue-300 font-medium">{data.email?.replace('@phone.com','')}</p>
                           </div>
                         </div>
                       </div>
@@ -609,6 +693,66 @@ const ProfileCenterPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+                 {/* Expiration Modal */}
+         <Modal 
+           isOpen={showExpirationModal} 
+           onOpenChange={setShowExpirationModal}
+           backdrop="blur"
+           placement="center"
+         >
+           <ModalContent>
+             {(onClose) => (
+               <>
+                 <ModalHeader className="flex flex-col gap-1">
+                   <div className="flex items-center gap-3">
+                     <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-600 rounded-xl flex items-center justify-center">
+                       <Crown className="w-6 h-6 text-white" aria-hidden="true" />
+                     </div>
+                                           <div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                          {t('common.membership.expired')}
+                        </h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          {t('common.membership.needPurchase')}
+                        </p>
+                      </div>
+                   </div>
+                 </ModalHeader>
+                 <ModalBody>
+                   <div className="space-y-4">
+                                           <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                          ⚠️ {t('common.membership.expiredMessage')}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-slate-600 dark:text-slate-400">{t('common.membership.expiredTime')}</span>
+                          <span className="font-semibold text-sm text-slate-900 dark:text-white">
+                            {formatDate(data.expired_at)}
+                          </span>
+                        </div>
+                      </div>
+                   </div>
+                 </ModalBody>
+                                   <ModalFooter>
+                    <Button color="default" variant="light" onPress={onClose}>
+                      {t('common.cancel')}
+                    </Button>
+                    <Button 
+                      color="primary" 
+                      onPress={handlePurchase}
+                      startContent={<Crown className="w-4 h-4" aria-hidden="true" />}
+                    >
+                      {t('common.membership.goPurchase')}
+                    </Button>
+                  </ModalFooter>
+               </>
+             )}
+           </ModalContent>
+         </Modal>
       </div>
     </BasePage>
   )

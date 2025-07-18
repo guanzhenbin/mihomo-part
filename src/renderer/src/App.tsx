@@ -6,7 +6,7 @@ import SysproxySwitcher from '@renderer/components/sider/sysproxy-switcher'
 import TunSwitcher from '@renderer/components/sider/tun-switcher'
 import { Divider } from '@heroui/react'
 import { IoSettings } from 'react-icons/io5'
-import { MdNewReleases } from 'react-icons/md'
+// import { MdNewReleases } from 'react-icons/md'
 import routes from '@renderer/routes'
 import UpdaterModal from '@renderer/components/updater/updater-modal'
 import { checkUpdate } from '@renderer/utils/ipc'
@@ -24,7 +24,6 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext } from '@dnd-kit/sortable'
 import ProfileCard from '@renderer/components/sider/profile-card'
-import ProxyCard from '@renderer/components/sider/proxy-card'
 import RuleCard from '@renderer/components/sider/rule-card'
 import DNSCard from '@renderer/components/sider/dns-card'
 import SniffCard from '@renderer/components/sider/sniff-card'
@@ -61,6 +60,7 @@ const App: React.FC = () => {
   const { appConfig, patchAppConfig } = useAppConfig()
   const { isAuthenticated, isLoading } = useAuth()
   const [openUpdateModal, setOpenUpdateModal] = useState(false)
+  const [hasNavigatedAfterLogin, setHasNavigatedAfterLogin] = useState(false)
   const {
     appTheme = 'system',
     customTheme,
@@ -74,13 +74,11 @@ const App: React.FC = () => {
       'rule',
       'resource',
       'override',
-      'download',
       'connection',
       'mihomo',
       'dns',
       'sniff',
       'log',
-      'substore',
       'profilecenter',
       'packagepurchase',
       'ordercenter'
@@ -120,10 +118,8 @@ const App: React.FC = () => {
   }
 
   useEffect(() => {
-    // 确保 download 和 packagepurchase 在 siderOrder 中，但移除 proxy
-    let updatedOrder = siderOrder.includes('download') 
-      ? siderOrder 
-      : [...siderOrder.slice(0, 6), 'download', ...siderOrder.slice(6)]
+    // 确保 packagepurchase 和 ordercenter 在 siderOrder 中，但移除不需要的项目
+    let updatedOrder = [...siderOrder]
     
     // 确保 packagepurchase 在 siderOrder 中
     if (!updatedOrder.includes('packagepurchase')) {
@@ -135,14 +131,14 @@ const App: React.FC = () => {
       updatedOrder = [...updatedOrder, 'ordercenter']
     }
     
-    // 移除 proxy 如果它存在
-    updatedOrder = updatedOrder.filter(item => item !== 'proxy')
+    // 移除 proxy、substore 和 download 如果它们存在
+    updatedOrder = updatedOrder.filter(item => item !== 'proxy' && item !== 'substore' && item !== 'download')
     
     setOrder(updatedOrder)
     setSiderWidthValue(siderWidth)
     
     // 如果需要更新配置
-    if (!siderOrder.includes('download') || !siderOrder.includes('packagepurchase') || !siderOrder.includes('ordercenter') || siderOrder.includes('proxy')) {
+    if (!siderOrder.includes('packagepurchase') || !siderOrder.includes('ordercenter') || siderOrder.includes('proxy') || siderOrder.includes('substore') || siderOrder.includes('download')) {
       patchAppConfig({ siderOrder: updatedOrder })
     }
   }, [siderOrder, siderWidth, patchAppConfig])
@@ -329,11 +325,12 @@ const App: React.FC = () => {
       ]
     })
 
-    const tourShown = window.localStorage.getItem('tourShown')
-    if (!tourShown) {
-      window.localStorage.setItem('tourShown', 'true')
-      driverInstance.drive()
-    }
+    // 禁用自动启动教程
+    // const tourShown = window.localStorage.getItem('tourShown')
+    // if (!tourShown) {
+    //   window.localStorage.setItem('tourShown', 'true')
+    //   driverInstance.drive()
+    // }
   }, [t])
 
   useEffect(() => {
@@ -347,6 +344,30 @@ const App: React.FC = () => {
       setTitlebar()
     })
   }, [customTheme])
+
+  // 登录成功后自动导航到系统代理页面
+  useEffect(() => {
+    if (isAuthenticated && !isLoading && !hasNavigatedAfterLogin) {
+      // 添加短暂延迟确保认证状态稳定后再跳转
+      const timer = setTimeout((): void => {
+        // 检查当前路径，如果不是系统代理页面就导航过去
+        if (location.pathname !== '/sysproxy') {
+          console.log('🔄 Auto-navigating to sysproxy page after login')
+          navigate('/sysproxy')
+          setHasNavigatedAfterLogin(true)
+        }
+      }, 100)
+      
+      return (): void => clearTimeout(timer)
+    }
+  }, [isAuthenticated, isLoading, hasNavigatedAfterLogin, location.pathname, navigate])
+
+  // 重置导航标记当用户登出时
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setHasNavigatedAfterLogin(false)
+    }
+  }, [isAuthenticated])
 
   useEffect(() => {
     window.addEventListener('mouseup', onResizeEnd)
@@ -391,7 +412,6 @@ const App: React.FC = () => {
     override: 'override',
     substore: 'substore',
     profilecenter: 'profile-center',
-    profileCenter: 'profile-center',
     download: 'download',
     packagepurchase: 'package-purchase',
     ordercenter: 'order-center'
@@ -411,7 +431,6 @@ const App: React.FC = () => {
     override: OverrideCard,
     substore: SubStoreCard,
     profilecenter: ProfileCenterCard,
-    profileCenter: ProfileCenterCard,
     download: DownloadCard,
     packagepurchase: PackagePurchaseCard,
     ordercenter: OrderCenterCard
@@ -461,14 +480,14 @@ const App: React.FC = () => {
         className={`w-full h-[100vh] flex relative ${resizing ? 'cursor-ew-resize' : ''}`}
       >
       {siderWidthValue === narrowWidth ? (
-        <div style={{ width: `${narrowWidth}px` }} className="side h-full flex flex-col">
-          <div className="app-drag flex justify-center items-center z-40 bg-transparent h-[49px]">
+        <div style={{ width: `${narrowWidth}px` }} className="side h-full flex flex-col overflow-hidden">
+          <div className="app-drag flex justify-center items-center z-40 bg-transparent h-[49px] overflow-hidden">
             {platform !== 'darwin' && (
               <MihomoIcon className="h-[32px] leading-[32px] text-lg mx-[1px]" />
             )}
           </div>
-          <div className="flex-1 overflow-y-auto no-scrollbar">
-            <div className="h-full w-full flex flex-col gap-2">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
+            <div className="h-full w-full flex flex-col gap-2 overflow-hidden">
               {order.map((key: string) => {
                 const Component = componentMap[key]
                 if (!Component) return null
@@ -478,10 +497,11 @@ const App: React.FC = () => {
           </div>
           
           {/* 窄屏模式下的设置和更新按钮 - 左右布局 */}
-          <div className="flex-shrink-0 px-3 py-4 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-900 dark:to-gray-800 border-t border-gray-200/70 dark:border-gray-700/70">
-            <div className="flex items-center justify-between">
+          {/* <div className="flex-shrink-0 px-3 py-4 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-900 dark:to-gray-800 border-t border-gray-200/70 dark:border-gray-700/70 w-full max-w-full overflow-hidden">
+            <div className="flex items-center justify-between min-w-0">
               <button
                 onClick={() => navigate('/settings')}
+                aria-label="设置"
                 className={`flex-1 mr-2 p-3 rounded-2xl transition-all duration-300 app-nodrag group ${
                   location.pathname.includes('/settings')
                     ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-xl shadow-primary/20'
@@ -498,33 +518,34 @@ const App: React.FC = () => {
               <div className="app-nodrag flex-shrink-0">
                 <button 
                   onClick={() => setOpenUpdateModal(true)}
+                  aria-label="检查更新"
                   className="p-3 rounded-xl bg-white/80 dark:bg-gray-800/80 text-red-500 hover:bg-white dark:hover:bg-gray-700 hover:shadow-lg border border-gray-200/60 dark:border-gray-600/60 backdrop-blur-sm transition-all duration-300"
                 >
                   <MdNewReleases className="text-lg" />
                 </button>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       ) : (
         <div
           style={{ width: `${siderWidthValue}px` }}
-          className="side h-full flex flex-col bg-gray-50/30 dark:bg-gray-900/30"
+          className="side h-full flex flex-col bg-gray-50/30 dark:bg-gray-900/30 overflow-hidden"
         >
-          <div className="app-drag sticky top-0 z-40 backdrop-blur bg-white/80 dark:bg-gray-900/80 border-b border-gray-200/50 dark:border-gray-700/50 h-[65px]">
+          <div className="app-drag sticky top-0 z-40 backdrop-blur bg-white/80 dark:bg-gray-900/80 border-b border-[#e5e7eb] dark:border-gray-700/50 h-[49px] overflow-hidden">
             <div
-              className={`flex items-center justify-between h-full px-5 ${!useWindowFrame && platform === 'darwin' ? 'ml-[60px]' : ''}`}
+              className={`flex items-center justify-between h-full px-3 ${!useWindowFrame && platform === 'darwin' ? 'ml-[60px] pr-1' : 'px-5'}`}
             >
-              <div className="flex items-center gap-4">
-                <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">蓝快加速器</h3>
+              <div className="flex items-center gap-4 min-w-0 flex-1">
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">一键连加速器</h3>
                 </div>
               </div>
               
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto no-scrollbar py-4">
-            <div className="px-4 mb-6">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar py-4">
+            <div className="px-3 mb-6 w-full max-w-full">
               <OutboundModeSwitcher />
             </div>
             
@@ -537,7 +558,7 @@ const App: React.FC = () => {
                 <SortableContext items={order}>
                   {order.slice(0, 8).map((key: string) => {
                     // 特殊处理个人中心卡片
-                    if (key === 'profileCenter' || key === 'profilecenter') {
+                    if (key === 'profilecenter') {
                       return <ProfileCenterCard key={key} iconOnly={false} />
                     }
                     
@@ -572,7 +593,7 @@ const App: React.FC = () => {
                 <SortableContext items={order}>
                   {order.slice(8).map((key: string) => {
                     // 特殊处理个人中心卡片
-                    if (key === 'profileCenter' || key === 'profilecenter') {
+                    if (key === 'profilecenter') {
                       return <ProfileCenterCard key={key} iconOnly={false} />
                     }
                     
@@ -601,10 +622,11 @@ const App: React.FC = () => {
           </div>
           
           {/* 设置和更新按钮固定在侧边栏底部 - 左右布局 */}
-          <div className="flex-shrink-0 px-4 py-5 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-900 dark:to-gray-800 border-t border-gray-200/70 dark:border-gray-700/70">
-            <div className="flex items-center justify-between gap-4">
+          {/* <div className="flex-shrink-0 px-3 py-5 bg-gradient-to-r from-slate-50 to-gray-50 dark:from-gray-900 dark:to-gray-800 border-t border-gray-200/70 dark:border-gray-700/70 w-full max-w-full overflow-hidden">
+            <div className="flex items-center justify-between gap-3 min-w-0">
               <button
                 onClick={() => navigate('/settings')}
+                aria-label="设置"
                 className={`flex-1 px-4 py-3.5 rounded-2xl transition-all duration-300 app-nodrag group ${
                   location.pathname.includes('/settings')
                     ? 'bg-gradient-to-r from-primary to-primary/90 text-white shadow-xl shadow-primary/20'
@@ -631,6 +653,7 @@ const App: React.FC = () => {
                 <div className="p-1 rounded-xl bg-white/50 dark:bg-gray-800/50 border border-gray-200/50 dark:border-gray-600/50 backdrop-blur-sm">
                   <button 
                     onClick={() => setOpenUpdateModal(true)}
+                    aria-label="检查更新"
                     className="px-3 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-all duration-200"
                   >
                     {latestUpdate ? `v${latestUpdate.version}` : 'v1.7.6'}
@@ -638,7 +661,7 @@ const App: React.FC = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       )}
 

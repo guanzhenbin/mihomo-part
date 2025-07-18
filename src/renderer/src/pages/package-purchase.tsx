@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Card, CardBody, Button, Chip } from '@heroui/react'
+import { Card, CardBody, Button, Chip, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
-import { Zap, Check, Package, Wifi, Globe, Shield, Clock, TrendingUp } from 'lucide-react'
+import { Zap, Check, Package, Wifi, Globe, Shield, Clock, TrendingUp, AlertTriangle, X } from 'lucide-react'
 import { apiService, type PlanItem } from '@renderer/services/api'
 import useSWR from 'swr'
+import { useNavigate } from 'react-router-dom'
 
 interface PricingPlan {
   id: number
@@ -22,6 +23,9 @@ interface PricingPlan {
 
 const PackagePurchasePage: React.FC = () => {
   const [selectedPlan, setSelectedPlan] = useState<number | null>(null)
+  const [processing, setProcessing] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   // 使用SWR获取套餐数据，避免重复请求
   const { data: plansData, isLoading } = useSWR(
@@ -119,16 +123,34 @@ const PackagePurchasePage: React.FC = () => {
       period = 'onetime_price'
     }
     
+    setProcessing(true)
+    
     try {
       const response = await apiService.createOrder(period, planId)
       if (response.success) {
         console.log('订单创建成功:', response.data)
-        // 可以在这里添加成功后的逻辑，比如跳转到支付页面
+        
+        // 获取订单ID - 直接从data字段或嵌套对象中获取
+        const orderId = (response.data as any)?.data || (response.data as any)?.trade_no || (response.data as any)?.order_id || (response.data as any)?.id
+        
+        if (orderId) {
+          console.log('准备跳转到订单中心，订单ID:', orderId)
+          // 跳转到订单中心页面，并将订单ID作为参数传递
+          navigate(`/order-center?orderId=${orderId}&autoPayment=true`)
+        } else {
+          console.log('未找到订单ID，直接跳转到订单中心')
+          // 如果没有订单ID，直接跳转到订单中心
+          navigate('/order-center')
+        }
       } else {
         console.error('订单创建失败:', response.message)
+        setErrorMessage(response.message || '订单创建失败，请重试')
+        setProcessing(false)
       }
     } catch (error) {
       console.error('创建订单时发生错误:', error)
+      setErrorMessage('网络错误，请检查网络连接后重试')
+      setProcessing(false)
     } finally {
       setSelectedPlan(null)
     }
@@ -150,6 +172,22 @@ const PackagePurchasePage: React.FC = () => {
   return (
     <BasePage title="">
       <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        
+        {/* 全屏处理中 Loading */}
+        {processing && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl border border-slate-200 dark:border-slate-700 text-center min-w-[300px]">
+              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">正在处理订单</h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-4">订单创建成功，即将跳转到支付页面...</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 left-20 w-2 h-2 bg-blue-400/30 rounded-full animate-ping" />
@@ -355,6 +393,70 @@ const PackagePurchasePage: React.FC = () => {
           </div>
         </div>
       </div>
+      
+      {/* 错误弹窗 */}
+      <Modal 
+        isOpen={!!errorMessage} 
+        onClose={() => setErrorMessage(null)}
+        size="sm"
+        backdrop="blur"
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-red-400 to-red-600 rounded-xl flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  订单创建失败
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  请查看详细信息
+                </p>
+              </div>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <p className="text-sm text-red-800 dark:text-red-200">
+                {errorMessage}
+              </p>
+            </div>
+            
+            {errorMessage?.includes('未付款或开通中的订单') && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mt-4">
+                <p className="text-sm text-blue-800 dark:text-blue-200">
+                  💡 <strong>解决方案：</strong>
+                  <br />
+                  • 前往订单中心完成未付款订单的支付
+                  <br />
+                  • 或者取消现有的未付款订单后重新购买
+                </p>
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button 
+              color="danger" 
+              variant="light" 
+              onPress={() => setErrorMessage(null)}
+              startContent={<X className="w-4 h-4" />}
+            >
+              关闭
+            </Button>
+            <Button 
+              color="primary" 
+              onPress={() => {
+                setErrorMessage(null)
+                navigate('/order-center')
+              }}
+            >
+              前往订单中心
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </BasePage>
   )
 }

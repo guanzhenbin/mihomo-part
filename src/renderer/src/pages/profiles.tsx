@@ -203,6 +203,7 @@ const Profiles: React.FC = () => {
         <Button
           size="sm"
           title={t('profiles.updateAll')}
+          aria-label={t('profiles.updateAll')}
           className="app-nodrag"
           variant="light"
           isIconOnly

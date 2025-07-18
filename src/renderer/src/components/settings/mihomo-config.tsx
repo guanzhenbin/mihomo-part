@@ -148,6 +148,7 @@ const MihomoConfig: React.FC = () => {
             className="w-[150px]"
             size="sm"
             selectedKeys={new Set([mihomoCpuPriority])}
+            aria-label={t('mihomo.cpuPriority.title')}
             disallowEmptySelection={true}
             onSelectionChange={async (v) => {
               try {
@@ -173,7 +174,7 @@ const MihomoConfig: React.FC = () => {
         title={t('mihomo.workDir.title')}
         actions={
           <Tooltip content={t('mihomo.workDir.tooltip')}>
-            <Button isIconOnly size="sm" variant="light">
+            <Button isIconOnly size="sm" variant="light" aria-label="帮助信息">
               <IoIosHelpCircle className="text-lg" />
             </Button>
           </Tooltip>

@@ -1,28 +1,18 @@
 "use client";
 
 import { useState, type FC, type FormEvent } from "react";
-import { Lock, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { useAuth } from "@renderer/hooks/use-auth";
 import { apiService } from "@renderer/services/api";
 
-type LoginType = 'email' | 'phone';
-
 const LoginForm: FC = () => {
-  const [loginType, setLoginType] = useState<LoginType>('phone');
-  const [email, setEmail] = useState<string>("");
   const [phone, setPhone] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
   const [verificationCode, setVerificationCode] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSendingCode, setIsSendingCode] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(0);
   const { login, recheckAuth } = useAuth();
-
-  const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    setEmail(event.target.value);
-    if (error) setError("");
-  };
 
   const handlePhoneChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     let value = event.target.value.replace(/\D/g, ''); // Remove non-digits
@@ -50,15 +40,6 @@ const LoginForm: FC = () => {
     }
     setVerificationCode(value);
     if (error) setError("");
-  };
-
-  const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
-    setPassword(event.target.value);
-    if (error) setError("");
-  };
-
-  const validateEmail = (emailToValidate: string): boolean => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailToValidate);
   };
 
   const validatePhone = (phoneToValidate: string): boolean => {
@@ -118,141 +99,76 @@ const LoginForm: FC = () => {
     setError("");
     setIsLoading(true);
 
-    if (loginType === 'email') {
-      // 邮箱登录逻辑
-      if (!email.trim() || !password.trim()) {
-        setError("请输入邮箱和密码");
-        setIsLoading(false);
-        return;
-      }
+    // 手机号验证码登录逻辑
+    if (!phone.trim() || !verificationCode.trim()) {
+      setError("请输入手机号和验证码");
+      setIsLoading(false);
+      return;
+    }
 
-      if (!validateEmail(email)) {
-        setError("请输入正确的邮箱地址");
-        setIsLoading(false);
-        return;
-      }
+    if (!validatePhone(phone)) {
+      setError("请输入正确的手机号");
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        // 先尝试调用API登录
-        console.log('🔐 Calling loginWithEmail API with:', { email, password });
-        const result = await apiService.loginWithEmail(email, password);
-        console.log('🔐 loginWithEmail API response:', result);
+    if (verificationCode.length !== 4) {
+      setError("请输入4位验证码");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // 获取纯数字的手机号
+      const phoneNumber = phone.replace(/\D/g, '');
+      
+      console.log('🔐 Calling loginWithSms API with:', { phoneNumber, verificationCode });
+      const result = await apiService.loginWithSms(phoneNumber, verificationCode);
+      console.log('🔐 loginWithSms API response:', result);
+      
+      if (result.success) {
+        console.log('🔐 SMS login successful, user data:', result.data);
         
-        if (result.success) {
-          console.log('🔐 Email login successful, user data:', result.data);
+        let profileResult: Awaited<ReturnType<typeof apiService.getUserProfile>> | null = null;
+        
+        // 保存token到sessionStorage
+        if (result.data?.data?.token) {
+          sessionStorage.setItem('mihomo-party-token', result.data.data.token);
+          sessionStorage.setItem('mihomo-party-auth', 'true'); // 设置认证状态
+          console.log('🔐 Token saved to sessionStorage:', result.data.data.token);
           
-          let profileResult = null;
-          
-          // 保存token到sessionStorage
-          if (result.data?.data?.token) {
-            sessionStorage.setItem('mihomo-party-token', result.data.data.token);
-            sessionStorage.setItem('mihomo-party-auth', 'true'); // 设置认证状态
-            console.log('🔐 Token saved to sessionStorage:', result.data.data.token);
+          // 获取完整用户信息
+          try {
+            console.log('🔐 Fetching user profile...');
+            profileResult = await apiService.getUserProfile();
+            console.log('🔐 User profile fetched:', profileResult);
             
-            // 获取完整用户信息
-            try {
-              console.log('🔐 Fetching user profile...');
-              profileResult = await apiService.getUserProfile();
-              console.log('🔐 User profile fetched:', profileResult);
-              
-              if (profileResult.success && profileResult.data) {
-                sessionStorage.setItem('mihomo-party-user', JSON.stringify(profileResult.data));
-                console.log('🔐 Complete user profile saved to sessionStorage');
-              }
-            } catch (profileError) {
-              console.error('🔐 Failed to fetch user profile:', profileError);
-              // 即使获取用户信息失败，也不影响登录
+            if (profileResult?.success && profileResult?.data) {
+              sessionStorage.setItem('mihomo-party-user', JSON.stringify(profileResult.data));
+              console.log('🔐 Complete user profile saved to sessionStorage');
             }
+          } catch (profileError) {
+            console.error('🔐 Failed to fetch user profile:', profileError);
+            // 即使获取用户信息失败，也不影响登录
           }
-          
-          const success = await login("dummy-password"); // 使用本地认证
-          if (!success) {
-            setError("登录失败，请重试");
-          } else {
-            // 登录成功后重新检查认证状态，传递已获取的profile数据避免重复调用
-            await recheckAuth(profileResult);
-          }
-        } else {
-          setError("邮箱或密码错误，请重试");
         }
-      } catch (error) {
-        console.error("Login error:", error);
-        setError("登录失败，请重试");
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // 手机号验证码登录逻辑
-      if (!phone.trim() || !verificationCode.trim()) {
-        setError("请输入手机号和验证码");
-        setIsLoading(false);
-        return;
-      }
-
-      if (!validatePhone(phone)) {
-        setError("请输入正确的手机号");
-        setIsLoading(false);
-        return;
-      }
-
-      if (verificationCode.length !== 4) {
-        setError("请输入4位验证码");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        // 获取纯数字的手机号
-        const phoneNumber = phone.replace(/\D/g, '');
         
-        console.log('🔐 Calling loginWithSms API with:', { phoneNumber, verificationCode });
-        const result = await apiService.loginWithSms(phoneNumber, verificationCode);
-        console.log('🔐 loginWithSms API response:', result);
-        
-        if (result.success) {
-          console.log('🔐 SMS login successful, user data:', result.data);
-          
-          let profileResult = null;
-          
-          // 保存token到sessionStorage
-          if (result.data?.data?.token) {
-            sessionStorage.setItem('mihomo-party-token', result.data.data.token);
-            sessionStorage.setItem('mihomo-party-auth', 'true'); // 设置认证状态
-            console.log('🔐 Token saved to sessionStorage:', result.data.data.token);
-            
-            // 获取完整用户信息
-            try {
-              console.log('🔐 Fetching user profile...');
-              profileResult = await apiService.getUserProfile();
-              console.log('🔐 User profile fetched:', profileResult);
-              
-              if (profileResult.success && profileResult.data) {
-                sessionStorage.setItem('mihomo-party-user', JSON.stringify(profileResult.data));
-                console.log('🔐 Complete user profile saved to sessionStorage');
-              }
-            } catch (profileError) {
-              console.error('🔐 Failed to fetch user profile:', profileError);
-              // 即使获取用户信息失败，也不影响登录
-            }
-          }
-          
-          const success = await login("dummy-password"); // 手机号登录不需要密码
-          if (!success) {
-            setError("登录失败，请重试");
-          } else {
-            // 登录成功后重新检查认证状态，传递已获取的profile数据避免重复调用
-            await recheckAuth(profileResult);
-          }
+        const success = await login("dummy-password"); // 手机号登录不需要密码
+        if (!success) {
+          setError("登录失败，请重试");
         } else {
-          console.log('🔐 SMS login failed:', result.message);
-          setError(result.message || "验证码错误，请重试");
+          // 登录成功后重新检查认证状态，传递已获取的profile数据避免重复调用
+          await recheckAuth(profileResult);
         }
-      } catch (error) {
-        console.error("Login error:", error);
-        setError("登录失败，请重试");
-      } finally {
-        setIsLoading(false);
+      } else {
+        console.log('🔐 SMS login failed:', result.message);
+        setError(result.message || "验证码错误，请重试");
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("登录失败，请重试");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -264,143 +180,55 @@ const LoginForm: FC = () => {
           <div className="w-6 h-6 bg-black dark:bg-white rounded-full flex items-center justify-center">
             <LogIn className="w-3 h-3 text-white dark:text-black" />
           </div>
-          <span className="text-lg font-bold text-gray-900 dark:text-white">Mihomo Party</span>
+          <span className="text-lg font-bold text-gray-900 dark:text-white">一键连加速器</span>
         </div>
         
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2 leading-tight">
-          Welcome Back!
+          欢迎回来！
         </h1>
         <p className="text-gray-500 dark:text-gray-400">
-          Please enter log in details below
+          请输入登录信息
         </p>
       </div>
 
-      {/* Login Type Tabs - Modern Tab Style */}
-      <div className="mb-6">
-        <div className="flex relative bg-gray-100 dark:bg-gray-800 rounded-lg p-1 max-w-full">
-          {/* Tab背景滑块 */}
-          <div 
-            className={`absolute top-1 bottom-1 bg-white dark:bg-gray-700 rounded-md shadow-sm transition-all duration-300 ease-out ${
-              loginType === 'email' ? 'left-1/2 right-1' : 'left-1 right-1/2'
-            }`}
-          />
-          
-          <button
-            type="button"
-            onClick={() => {
-              setLoginType('phone');
-              setError('');
-            }}
-            className={`flex-1 relative z-10 py-2.5 px-1 text-center text-xs font-medium transition-all duration-300 rounded-md overflow-hidden ${
-              loginType === 'phone'
-                ? 'text-gray-900 dark:text-white'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            <span className="block truncate whitespace-nowrap">手机</span>
-          </button>
-          
-          <button
-            type="button"
-            onClick={() => {
-              setLoginType('email');
-              setError('');
-            }}
-            className={`flex-1 relative z-10 py-2.5 px-1 text-center text-xs font-medium transition-all duration-300 rounded-md overflow-hidden ${
-              loginType === 'email'
-                ? 'text-gray-900 dark:text-white'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            <span className="block truncate whitespace-nowrap">邮箱</span>
-          </button>
-        </div>
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Account Input */}
+        {/* Phone Input */}
         <div className="relative">
-          {loginType === 'email' ? (
-            <input
-              type="email"
-              placeholder="邮箱地址"
-              value={email}
-              onChange={handleEmailChange}
-              required
-              disabled={isLoading}
-              className="w-full px-4 py-3 border-2 border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 ease-out focus:outline-none focus:border-gray-300 dark:focus:border-gray-600 focus:bg-white dark:focus:bg-gray-700 focus:shadow-lg hover:border-gray-200 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-          ) : (
-            <div className="relative">
-              <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm">
-                +86
-              </div>
-              <input
-                type="tel"
-                placeholder="手机号"
-                value={phone}
-                onChange={handlePhoneChange}
-                required
-                disabled={isLoading}
-                className="w-full pl-14 pr-4 py-3 border-2 border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 ease-out focus:outline-none focus:border-gray-300 dark:focus:border-gray-600 focus:bg-white dark:focus:bg-gray-700 focus:shadow-lg hover:border-gray-200 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-            </div>
-          )}
+          <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 text-sm">
+            +86
+          </div>
+          <input
+            type="tel"
+            placeholder="手机号"
+            value={phone}
+            onChange={handlePhoneChange}
+            required
+            disabled={isLoading}
+            className="w-full pl-14 pr-4 py-3 border-2 border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 ease-out focus:outline-none focus:border-gray-300 dark:focus:border-gray-600 focus:bg-white dark:focus:bg-gray-700 focus:shadow-lg hover:border-gray-200 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          />
         </div>
 
-        {/* Password or Verification Code Input */}
-        {loginType === 'email' ? (
-          <div className="relative">
-            <input
-              type="password"
-              placeholder="密码"
-              value={password}
-              onChange={handlePasswordChange}
-              required
-              disabled={isLoading}
-              className="w-full px-4 py-3 pr-12 border-2 border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 ease-out focus:outline-none focus:border-gray-300 dark:focus:border-gray-600 focus:bg-white dark:focus:bg-gray-700 focus:shadow-lg hover:border-gray-200 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-            <button
-              type="button"
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200 pointer-events-none"
-            >
-              <Lock className="w-5 h-5" />
-            </button>
-          </div>
-        ) : (
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="4位验证码"
-              value={verificationCode}
-              onChange={handleVerificationCodeChange}
-              required
-              disabled={isLoading}
-              maxLength={4}
-              className="w-full px-4 py-3 pr-24 border-2 border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 ease-out focus:outline-none focus:border-gray-300 dark:focus:border-gray-600 focus:bg-white dark:focus:bg-gray-700 focus:shadow-lg hover:border-gray-200 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-            <button
-              type="button"
-              onClick={sendVerificationCode}
-              disabled={isSendingCode || countdown > 0 || !validatePhone(phone)}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500 text-primary dark:text-blue-300 hover:text-primary/80 dark:hover:text-blue-200 disabled:text-gray-400 dark:disabled:text-gray-400 disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:border-gray-100 dark:disabled:border-gray-600 disabled:cursor-not-allowed shadow-sm transition-all duration-200"
-            >
-              {countdown > 0 ? `${countdown}s` : isSendingCode ? '发送中...' : '获取验证码'}
-            </button>
-          </div>
-        )}
-
-        {/* Forgot Password - Only for email login */}
-        {loginType === 'email' && (
-          <div className="text-right">
-            <button
-              type="button"
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-            >
-              忘记密码？
-            </button>
-          </div>
-        )}
+        {/* Verification Code Input */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="4位验证码"
+            value={verificationCode}
+            onChange={handleVerificationCodeChange}
+            required
+            disabled={isLoading}
+            maxLength={4}
+            className="w-full px-4 py-3 pr-24 border-2 border-gray-100 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-300 ease-out focus:outline-none focus:border-gray-300 dark:focus:border-gray-600 focus:bg-white dark:focus:bg-gray-700 focus:shadow-lg hover:border-gray-200 dark:hover:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+          />
+          <button
+            type="button"
+            onClick={sendVerificationCode}
+            disabled={isSendingCode || countdown > 0 || !validatePhone(phone)}
+            className="absolute right-2 top-1/2 transform -translate-y-1/2 px-3 py-1.5 text-sm font-semibold rounded-md bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-500 text-primary dark:text-blue-300 hover:text-primary/80 dark:hover:text-blue-200 disabled:text-gray-400 dark:disabled:text-gray-400 disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:border-gray-100 dark:disabled:border-gray-600 disabled:cursor-not-allowed shadow-sm transition-all duration-200"
+          >
+            {countdown > 0 ? `${countdown}s` : isSendingCode ? '发送中...' : '获取验证码'}
+          </button>
+        </div>
 
         {error && (
           <div className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 p-3 rounded-xl border border-red-100 dark:border-red-800">
@@ -431,16 +259,20 @@ const LoginForm: FC = () => {
 
 export default function LoginPage(): React.JSX.Element {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 flex">
-      {/* Left Panel - Login Form */}
-      <div className="w-full lg:w-1/2 bg-white dark:bg-gray-900 flex items-center justify-center p-6 lg:p-12">
-        <div className="w-full max-w-md">
-          <LoginForm />
-        </div>
-      </div>
+    <div className="min-h-screen bg-white dark:bg-gray-900 flex flex-col">
+      {/* 顶部拖拽区域 */}
+      <div className="app-drag h-8 w-full bg-transparent flex-shrink-0 z-50"></div>
       
-      {/* Right Panel - Illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden items-center justify-center">
+      <div className="flex-1 flex">
+        {/* Left Panel - Login Form */}
+        <div className="w-full lg:w-1/2 bg-white dark:bg-gray-900 flex items-center justify-center p-6 lg:p-12">
+          <div className="w-full max-w-md">
+            <LoginForm />
+          </div>
+        </div>
+        
+        {/* Right Panel - Illustration */}
+        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative overflow-hidden items-center justify-center">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute inset-0" style={{
@@ -474,10 +306,10 @@ export default function LoginPage(): React.JSX.Element {
           </div>
           
           <h2 className="text-4xl font-bold mb-4 transition-all duration-500 hover:scale-105 animate-fade-in-up hover:text-blue-200">
-            Manage your Network Anywhere
+            随时随地管理您的网络
           </h2>
           <p className="text-xl text-gray-300 mb-12 max-w-md mx-auto leading-relaxed transition-all duration-700 hover:text-white animate-fade-in-up" style={{animationDelay: '0.3s'}}>
-            You can manage your proxy connections on the go with Mihomo Party on the web
+            使用一键连加速器，您可以在任何地方轻松管理代理连接
           </p>
           
         </div>
@@ -493,6 +325,7 @@ export default function LoginPage(): React.JSX.Element {
         <div className="absolute bottom-10 right-1/4 w-6 h-6 bg-pink-400/40 transform rotate-45 animate-scale-pulse hover:rotate-90 transition-transform"></div>
         <div className="absolute top-1/2 left-5 w-3 h-3 bg-orange-400/50 rounded-full animate-ping hover:bg-orange-400/80 transition-colors"></div>
         <div className="absolute top-3/4 right-5 w-5 h-5 bg-indigo-400/50 transform rotate-12 animate-float-reverse hover:rotate-45 transition-transform"></div>
+        </div>
       </div>
     </div>
   );

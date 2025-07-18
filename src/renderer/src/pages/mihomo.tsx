@@ -100,6 +100,7 @@ const Mihomo: React.FC = () => {
                 size="sm"
                 isIconOnly
                 title={t('mihomo.upgradeCore')}
+                aria-label={t('mihomo.upgradeCore')}
                 variant="light"
                 isLoading={upgrading}
                 onPress={async () => {
@@ -361,6 +362,7 @@ const Mihomo: React.FC = () => {
               <Button
                 size="sm"
                 isIconOnly
+                aria-label={t('mihomo.allowLanConnection')}
                 variant="light"
                 onPress={() => {
                   setLanOpen(true)

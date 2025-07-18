@@ -156,6 +156,7 @@ const Connections: React.FC = () => {
             <Button
               className="app-nodrag ml-1"
               title={t('connections.closeAll')}
+              aria-label={t('connections.closeAll')}
               isIconOnly
               size="sm"
               variant="light"
@@ -182,6 +183,7 @@ const Connections: React.FC = () => {
         <div className="flex p-2 gap-2">
           <Tabs
             size="sm"
+            aria-label="连接状态标签页"
             color={`${tab === 'active' ? 'primary' : 'danger'}`}
             selectedKey={tab}
             variant="underlined"
@@ -257,6 +259,7 @@ const Connections: React.FC = () => {
           <Button
             size="sm"
             isIconOnly
+            aria-label="切换排序方向"
             className="bg-content2"
             onPress={async () => {
               patchAppConfig({

@@ -13,7 +13,7 @@ export default function LoadingPage(): React.JSX.Element {
             {/* Animated ring */}
             <div className="absolute inset-0 w-12 h-12 border-2 border-transparent border-t-primary border-r-primary/30 rounded-full animate-spin"></div>
           </div>
-          <span className="text-2xl font-bold text-gray-900 dark:text-white">Mihomo Party</span>
+          <span className="text-2xl font-bold text-gray-900 dark:text-white">一键连加速器</span>
         </div>
         
         {/* Loading Animation */}

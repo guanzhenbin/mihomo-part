@@ -95,7 +95,7 @@ const Actions: React.FC = () => {
           title={t('actions.reset.title')}
           actions={
             <Tooltip content={t('actions.reset.tooltip')}>
-              <Button isIconOnly size="sm" variant="light">
+              <Button isIconOnly size="sm" variant="light" aria-label="帮助信息">
                 <IoIosHelpCircle className="text-lg" />
               </Button>
             </Tooltip>
@@ -110,7 +110,7 @@ const Actions: React.FC = () => {
           title={t('actions.heapSnapshot.title')}
           actions={
             <Tooltip content={t('actions.heapSnapshot.tooltip')}>
-              <Button isIconOnly size="sm" variant="light">
+              <Button isIconOnly size="sm" variant="light" aria-label="帮助信息">
                 <IoIosHelpCircle className="text-lg" />
               </Button>
             </Tooltip>
@@ -125,7 +125,7 @@ const Actions: React.FC = () => {
           title={t('actions.lightMode.title')}
           actions={
             <Tooltip content={t('actions.lightMode.tooltip')}>
-              <Button isIconOnly size="sm" variant="light">
+              <Button isIconOnly size="sm" variant="light" aria-label="帮助信息">
                 <IoIosHelpCircle className="text-lg" />
               </Button>
             </Tooltip>

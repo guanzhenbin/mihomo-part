@@ -1,18 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardBody, Button, Chip, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@heroui/react'
 import BasePage from '@renderer/components/base/base-page'
 import { Receipt, Eye, RefreshCw, Calendar, DollarSign, Package, CheckCircle, X, Clock, AlertTriangle, CheckCircle2, Info } from 'lucide-react'
 import { apiService, type OrderItem } from '@renderer/services/api'
 import useSWR, { mutate } from 'swr'
+import { useSearchParams } from 'react-router-dom'
 
 const OrderCenterPage: React.FC = () => {
-  const [selectedPlan, setSelectedPlan] = useState<number | null>(null)
   const [payingOrder, setPayingOrder] = useState<string | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [currentPaymentOrder, setCurrentPaymentOrder] = useState<any>(null)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [checkingStatus, setCheckingStatus] = useState(false)
   const [statusMessage, setStatusMessage] = useState<{type: 'success' | 'info' | 'error', text: string} | null>(null)
+  const [autoPaymentProcessing, setAutoPaymentProcessing] = useState(false)
+  const [orderSyncProcessing, setOrderSyncProcessing] = useState(false)
+  const [paymentWindowOpened, setPaymentWindowOpened] = useState<string | null>(null)
+  const [showTimeoutModal, setShowTimeoutModal] = useState(false)
+  const [timeoutOrderId, setTimeoutOrderId] = useState<string | null>(null)
+  const paymentTriggeredRef = useRef<string | null>(null)
+  const [searchParams] = useSearchParams()
 
   // 使用SWR获取订单数据，避免重复请求
   const { data: ordersData, isLoading } = useSWR(
@@ -54,6 +61,7 @@ const OrderCenterPage: React.FC = () => {
           amount: 69.99,
           status: 'pending' as const,
           created_at: '2023-12-01 15:20:00',
+          expired_at: undefined,
           period: '季',
           period_type: 'quarter' as const
         },
@@ -64,6 +72,7 @@ const OrderCenterPage: React.FC = () => {
           amount: 199.99,
           status: 'cancelled' as const,
           created_at: '2023-11-28 10:15:00',
+          expired_at: undefined,
           period: '年',
           period_type: 'year' as const
         }
@@ -73,6 +82,76 @@ const OrderCenterPage: React.FC = () => {
 
   const orders = ordersData || []
   const loading = isLoading
+
+  // 处理自动支付逻辑
+  useEffect(() => {
+    const orderId = searchParams.get('orderId')
+    const autoPayment = searchParams.get('autoPayment')
+    
+    // 防止重复触发：检查是否已经为这个订单触发过支付（使用ref实现同步检查）
+    if (orderId && autoPayment === 'true' && !loading && paymentTriggeredRef.current !== orderId) {
+      console.log('检测到自动支付参数，订单ID:', orderId)
+      
+      // 立即标记这个订单已经触发过支付，防止重复（同步操作）
+      paymentTriggeredRef.current = orderId
+      setAutoPaymentProcessing(true)
+      
+      // 等待订单数据同步的函数
+      const waitForOrderAndPay = async (maxAttempts = 8) => {
+        setOrderSyncProcessing(true)
+        
+        for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+          console.log(`等待订单数据同步，第${attempt}次检查...`)
+          
+          // 刷新订单数据并等待SWR更新
+          mutate('orders')
+          
+          // 等待一段时间让SWR数据加载和更新
+          await new Promise(resolve => setTimeout(resolve, 2000))
+          
+          // 检查SWR缓存的orders是否已包含目标订单
+          const currentOrders = orders || []
+          const targetOrder = currentOrders.find(order => order.id === orderId)
+          
+          if (targetOrder && targetOrder.status === 'pending') {
+            console.log('SWR数据已同步，找到待支付订单，自动发起支付')
+            setOrderSyncProcessing(false)
+            setAutoPaymentProcessing(true)
+            handlePayment(orderId)
+            return // 成功找到并处理
+          }
+          
+          console.log('SWR数据尚未同步目标订单，继续等待...')
+          
+          // 如果是最后一次尝试，显示超时提示而不是自动支付
+          if (attempt === maxAttempts) {
+            console.log('等待超时，显示手动支付提示')
+            setOrderSyncProcessing(false)
+            setAutoPaymentProcessing(false)
+            setTimeoutOrderId(orderId)
+            setShowTimeoutModal(true)
+          }
+        }
+      }
+      
+      // 首先检查当前orders中是否已有目标订单
+      const targetOrder = orders.find(order => order.id === orderId)
+      if (targetOrder && targetOrder.status === 'pending') {
+        console.log('找到待支付订单，自动发起支付')
+        setAutoPaymentProcessing(true)
+        handlePayment(orderId)
+      } else {
+        // 等待订单数据同步
+        waitForOrderAndPay()
+      }
+      
+      // 清理URL参数，防止页面刷新时重复触发
+      setTimeout(() => {
+        const newUrl = window.location.pathname
+        window.history.replaceState({}, '', newUrl)
+      }, 15000) // 给等待足够的时间
+    }
+  }, [searchParams, loading, orders])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -105,24 +184,69 @@ const OrderCenterPage: React.FC = () => {
   }
 
   const handlePayment = async (orderId: string) => {
+    // 防止重复支付：如果当前正在处理支付或已经打开了支付窗口，直接返回
+    if (payingOrder === orderId || paymentWindowOpened === orderId) {
+      console.log('订单正在支付中或支付窗口已打开，跳过重复请求')
+      return
+    }
+    
     setPayingOrder(orderId)
     
     try {
       const response = await apiService.getCheckoutUrl(orderId)
       if (response.success && response.data?.data) {
-        // 找到当前订单信息
-        const order = orders.find(o => o.id === orderId)
-        if (order) {
-          setCurrentPaymentOrder(order)
-          setShowPaymentModal(true)
+        // 标记支付窗口已为此订单打开
+        setPaymentWindowOpened(orderId)
+        
+        // 找到当前订单信息，如果找不到则创建临时订单信息
+        let order = orders.find(o => o.id === orderId)
+        if (!order) {
+          // 创建临时订单信息用于显示支付模态框
+          order = {
+            id: orderId,
+            plan_id: 0,
+            plan_name: '新订单',
+            amount: 0,
+            status: 'pending' as const,
+            created_at: new Date().toLocaleString(),
+            expired_at: undefined,
+            period: '未知',
+            period_type: 'month' as const
+          }
+          console.log('未在订单列表中找到订单，使用临时订单信息')
         }
+        
+        setCurrentPaymentOrder(order)
+        setShowPaymentModal(true)
+        
+        console.log('打开支付页面:', response.data.data)
         // 打开支付页面
         window.open(response.data.data, '_blank')
+        
+        // 5分钟后清除支付窗口标记，允许重新打开
+        setTimeout(() => {
+          setPaymentWindowOpened(null)
+        }, 5 * 60 * 1000)
+        
+        // 打开支付页面后，关闭自动支付loading
+        setTimeout(() => {
+          setAutoPaymentProcessing(false)
+        }, 2000)
       } else {
         console.error('获取支付地址失败:', response.message)
+        setAutoPaymentProcessing(false)
+        setOrderSyncProcessing(false)
+        // 清理支付窗口标记和触发标记
+        setPaymentWindowOpened(null)
+        paymentTriggeredRef.current = null
       }
     } catch (error) {
       console.error('获取支付地址时发生错误:', error)
+      setAutoPaymentProcessing(false)
+      setOrderSyncProcessing(false)
+      // 清理支付窗口标记和触发标记
+      setPaymentWindowOpened(null)
+      paymentTriggeredRef.current = null
     } finally {
       setPayingOrder(null)
     }
@@ -137,6 +261,17 @@ const OrderCenterPage: React.FC = () => {
     // 确认取消订单
     setShowCancelConfirm(false)
     setShowPaymentModal(false)
+    
+    // 清理支付窗口标记和触发标记
+    if (currentPaymentOrder?.id) {
+      setPaymentWindowOpened(null)
+      paymentTriggeredRef.current = null
+    }
+    
+    // 清理所有处理状态
+    setAutoPaymentProcessing(false)
+    setOrderSyncProcessing(false)
+    
     setCurrentPaymentOrder(null)
     console.log('取消订单:', currentPaymentOrder?.id)
   }
@@ -184,6 +319,13 @@ const OrderCenterPage: React.FC = () => {
             setTimeout(() => {
               mutate('orders')
               setShowPaymentModal(false)
+              // 清理支付窗口标记
+              setPaymentWindowOpened(null)
+              // 清理支付触发标记
+              paymentTriggeredRef.current = null
+              // 清理所有处理状态
+              setAutoPaymentProcessing(false)
+              setOrderSyncProcessing(false)
               setCurrentPaymentOrder(null)
               setStatusMessage(null)
             }, 2000)
@@ -209,6 +351,12 @@ const OrderCenterPage: React.FC = () => {
                 console.error('刷新用户信息失败:', error)
               }
               setShowPaymentModal(false)
+              // 清理支付窗口标记和触发标记
+              setPaymentWindowOpened(null)
+              paymentTriggeredRef.current = null
+              // 清理所有处理状态
+              setAutoPaymentProcessing(false)
+              setOrderSyncProcessing(false)
               setCurrentPaymentOrder(null)
               setStatusMessage(null)
             }, 2000)
@@ -234,6 +382,12 @@ const OrderCenterPage: React.FC = () => {
                 console.error('刷新用户信息失败:', error)
               }
               setShowPaymentModal(false)
+              // 清理支付窗口标记和触发标记
+              setPaymentWindowOpened(null)
+              paymentTriggeredRef.current = null
+              // 清理所有处理状态
+              setAutoPaymentProcessing(false)
+              setOrderSyncProcessing(false)
               setCurrentPaymentOrder(null)
               setStatusMessage(null)
             }, 2000)
@@ -278,6 +432,38 @@ const OrderCenterPage: React.FC = () => {
   return (
     <BasePage title="">
       <div className="relative min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+        
+        {/* 订单数据同步中 Loading */}
+        {orderSyncProcessing && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl border border-slate-200 dark:border-slate-700 text-center min-w-[300px]">
+              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">正在同步订单数据</h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-4">订单创建成功，正在等待数据同步，请稍候...</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* 自动支付处理中 Loading */}
+        {autoPaymentProcessing && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl border border-slate-200 dark:border-slate-700 text-center min-w-[300px]">
+              <div className="w-16 h-16 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">正在发起支付</h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-4">系统正在为您自动打开支付页面，请稍候...</p>
+              <div className="flex items-center justify-center gap-2 text-sm text-green-600 dark:text-green-400">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* 背景装饰 */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 left-20 w-2 h-2 bg-blue-400/30 rounded-full animate-ping" />
@@ -548,6 +734,90 @@ const OrderCenterPage: React.FC = () => {
               disabled={checkingStatus}
             >
               {checkingStatus ? '检查中...' : '检查订单支付状态'}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 超时提示弹窗 */}
+      <Modal 
+        isOpen={showTimeoutModal} 
+        onClose={() => {
+          setShowTimeoutModal(false)
+          setTimeoutOrderId(null)
+        }}
+        size="md"
+        backdrop="blur"
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center">
+                <Clock className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                  订单数据同步超时
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  请手动进行支付操作
+                </p>
+              </div>
+            </div>
+          </ModalHeader>
+          <ModalBody>
+            <div className="space-y-4">
+              <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <Info className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                  <div className="space-y-2">
+                    <p className="text-sm text-orange-800 dark:text-orange-200 font-medium">
+                      订单数据同步需要一些时间
+                    </p>
+                    <p className="text-sm text-orange-700 dark:text-orange-300">
+                      由于网络延迟或系统繁忙，订单数据同步超时。您可以：
+                    </p>
+                    <ul className="text-sm text-orange-700 dark:text-orange-300 space-y-1 ml-4">
+                      <li>• 稍等几分钟后，在订单列表中手动点击"支付"按钮</li>
+                      <li>• 或者刷新页面重新尝试</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              
+              {timeoutOrderId && (
+                <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-slate-600 dark:text-slate-400">订单号:</span>
+                    <span className="font-mono text-xs">{timeoutOrderId}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button 
+              color="default" 
+              variant="light" 
+              onPress={() => {
+                setShowTimeoutModal(false)
+                setTimeoutOrderId(null)
+              }}
+            >
+              我知道了
+            </Button>
+            <Button 
+              color="primary" 
+              onPress={() => {
+                if (timeoutOrderId) {
+                  handlePayment(timeoutOrderId)
+                }
+                setShowTimeoutModal(false)
+                setTimeoutOrderId(null)
+              }}
+              startContent={<DollarSign className="w-4 h-4" />}
+            >
+              立即支付
             </Button>
           </ModalFooter>
         </ModalContent>

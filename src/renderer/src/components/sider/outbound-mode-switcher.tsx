@@ -32,6 +32,7 @@ const OutboundModeSwitcher: React.FC = () => {
       
       <Tabs
         fullWidth
+        aria-label="出站模式切换"
         color="primary"
         selectedKey={mode}
         classNames={{

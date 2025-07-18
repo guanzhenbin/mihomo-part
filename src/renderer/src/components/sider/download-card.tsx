@@ -1,9 +1,10 @@
 import { MdDownload } from 'react-icons/md'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import SidebarNavItem from '@renderer/components/sidebar/sidebar-nav-item'
+import { useAppConfig } from '@renderer/hooks/use-app-config'
 import React from 'react'
 
 interface Props {
@@ -12,9 +13,15 @@ interface Props {
 
 const DownloadCard: React.FC<Props> = ({ iconOnly = false }) => {
   const { t } = useTranslation()
-  const navigate = useNavigate()
+  const { appConfig } = useAppConfig()
   const location = useLocation()
   const isActive = location.pathname.includes('/download')
+  const { downloadCardStatus = 'col-span-1' } = appConfig || {}
+  
+  // 如果设置为隐藏，则不显示
+  if (downloadCardStatus === 'hidden') {
+    return null
+  }
   
   const {
     attributes,

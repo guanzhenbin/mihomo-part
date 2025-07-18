@@ -138,7 +138,7 @@ const GeneralConfig: React.FC = () => {
           title={t('settings.autoQuitWithoutCore')}
           actions={
             <Tooltip content={t('settings.autoQuitWithoutCoreTooltip')}>
-              <Button isIconOnly size="sm" variant="light">
+              <Button isIconOnly size="sm" variant="light" aria-label="帮助信息">
                 <IoIosHelpCircle className="text-lg" />
               </Button>
             </Tooltip>
